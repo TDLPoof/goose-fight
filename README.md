@@ -1,4 +1,5 @@
-# GOOSE FIGHTING GAME
+# GOOSE FIGHTER 1
+Like Street Fighter but bad. Or Footsies. But bad.
 
 ## TARGET FEATURES:
 - Local multiplayer
