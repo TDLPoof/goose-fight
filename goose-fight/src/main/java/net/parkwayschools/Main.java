@@ -1,11 +1,11 @@
 package net.parkwayschools;
 
-import net.parkwayschools.gfx.GfxManager;
+import net.parkwayschools.gfx.GfxMgr;
 import net.parkwayschools.util.Log;
 
 public class Main {
     static Log log = new Log("main");
-    static GfxManager _gfx = new GfxManager();
+    static GfxMgr _gfx = new GfxMgr();
     static Thread _gfxThread;
 
     public static void main(String[] args) {

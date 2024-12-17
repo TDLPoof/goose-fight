@@ -1,4 +1,6 @@
 package net.parkwayschools.gfx;
 
-public record RenderObj(String sheetID, String spriteID, boolean isAnim, int animFrames) {
+import net.parkwayschools.phys.Vector2;
+
+public record RenderObj(Vector2 pos, String sheetID, String spriteID, boolean isAnim, int animFrames) {
 }
