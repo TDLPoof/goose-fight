@@ -12,7 +12,7 @@ public class State extends Thread {
         framesActive = f;
         activeKey = k;
     }
-    public void State(double f, String k, String t) {
+    public State(double f, String k, String t) {
         framesActive = f;
         activeKey = k;
         test = t;

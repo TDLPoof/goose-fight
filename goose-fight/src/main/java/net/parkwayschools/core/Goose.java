@@ -22,13 +22,14 @@ public class Goose {
         Down
     }
 
-    PhysicsBody hitbox;
     GooseType _playerType;
     Vector2 _position;
     FacingDirection _facing;
-    StateManager _stateManager;
+    static StateManager _stateManager;
 
-    State test = new State("3.4", a, "goofy");
+   /*
+   * */
+
 
 
 }
