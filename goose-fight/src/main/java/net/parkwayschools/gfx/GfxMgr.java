@@ -26,7 +26,8 @@ public class GfxMgr implements Runnable{
     public GfxMgr(){
         _sheets = new HashMap<>();
         _currentRQ = new ArrayList<>();
-        _currentRQ.add(new RenderObj(new Vector2(20,20),"sasha","2",true,3));
+        _currentRQ.add(new RenderObj(Vector2.zero,"maps","playplace",false,0));
+        _currentRQ.add(new RenderObj(new Vector2(20,20),"Goose-idle","rIdle",true,4));
         _framebuffer =  new BufferedImage(bufferX,bufferY,BufferedImage.TYPE_INT_ARGB);
         initSpritesheets();
     }
@@ -72,9 +73,9 @@ public class GfxMgr implements Runnable{
                 Spritesheet sp = _sheets.get(o.sheetID());
                 if (o.isAnim()){
                    int frameDuration = 30/o.animFrames();
-                   int frame = Math.min(29,frameCount)/frameDuration+1;
+                   int frame = ((Math.min(29,frameCount)/frameDuration+1)%o.animFrames())+1;
                    g.drawImage(sp.spr(o.spriteID()+frame), (int) o.pos().x, (int) o.pos().y, null);
-                   g.drawString(String.format("%d/%d",frame,o.animFrames()),(int)o.pos().x,(int)o.pos().y);
+                //   g.drawString(String.format("%d/%d",frame,o.animFrames()),(int)o.pos().x,(int)o.pos().y);
                 } else {
                     g.drawImage(sp.spr(o.spriteID()), (int) o.pos().x, (int) o.pos().y, null);
                 }
