@@ -26,6 +26,7 @@ public class Spritesheet {
         }
         try {
             _sheet = ImageIO.read(new File(String.format("data/sprite/%s.png", id)));
+            log.dbg("["+id+"]"+" has dimensions of "+_sheet.getWidth()+"x"+_sheet.getHeight());
         } catch (Exception e){
             log.err("Couldn't read the image for "+id);
         }

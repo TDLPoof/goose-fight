@@ -22,6 +22,6 @@ public class Log {
     }
 
     private void _log(String lvl, String msg){
-        System.out.printf("[%s] [%s] %s",lvl,_area,msg);
+        System.out.printf("[%s] [%s] %s\n",lvl,_area,msg);
     }
 }

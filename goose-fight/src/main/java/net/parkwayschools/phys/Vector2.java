@@ -1,3 +1,4 @@
+package net.parkwayschools.phys;
 public class Vector2
 {
     public static final Vector2 zero = new Vector2(0, 0);
@@ -16,6 +17,7 @@ public class Vector2
 
     @Override public String toString() { return "Vector2(" + x + ", " + y + ")"; }
 
+    //@Override
     public boolean equals(Vector2 other) {
         double tolerance = 1e-6;
         return Math.abs(x - other.x) < tolerance && Math.abs(y - other.y) < tolerance;
