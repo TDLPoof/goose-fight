@@ -1,3 +1,5 @@
+package net.parkwayschools.phys;
+
 import java.awt.Graphics;
 import java.awt.Color;
 import java.awt.event.*;
@@ -6,7 +8,7 @@ import javax.swing.JPanel;
 
 public class AwesomeMain {
     private static PhysicsBody createBox(double x, double y, double width, double height, double m, double d) {
-        return new PhysicsBody(x, y, width, height, m, d);
+        return new PhysicsBody(x, y, width, height, m, d, 0.1);
     }
 
     private static Collider createPlatform(double x, double y, double width, double height) {
