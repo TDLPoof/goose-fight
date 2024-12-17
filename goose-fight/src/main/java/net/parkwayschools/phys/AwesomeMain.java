@@ -1,23 +1,23 @@
-import java.awt.Graphics;
+import  java.awt.Graphics;
 import java.awt.Color;
 import java.awt.event.*;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 
 public class AwesomeMain {
-    private static PhysicsBody createBox(double x, double y, double width, double height, double m, double d) {
-        return new PhysicsBody(x, y, width, height, m, d);
+    private static PhysicsBody createBox(double x, double y, double width, double height, double m, double d, double r) {
+        return new PhysicsBody(x, y, width, height, m, d, r);
     }
 
     private static Collider createPlatform(double x, double y, double width, double height) {
         return new Collider(x, y, width, height);
     }
 
-    public static PhysicsBody box = createBox(100, 0, 40, 40, 1, 0);
-    public static PhysicsBody box2 = createBox(300, 0, 40, 40, 1, 0);
-    public static Collider platform = createPlatform(0, 340, 500, 40);
-    public static Collider platform2 = createPlatform(480, 0, 40, 380);
-    public static Collider platform2 = createPlatform(480, 0, 40, 380);
+    public static PhysicsBody box = createBox(100, 0, 40, 40, 1, 0, 0.6);
+    public static PhysicsBody box2 = createBox(300, 0, 40, 40, 1, 0, 0.6);
+    public static Collider platform = createPlatform(0, 700, 1920, 40);
+    public static Collider platform2 = createPlatform(1360, 0, 40, 1000);
+    public static Collider platform3 = createPlatform(60, 0, 40, 1000);
 
     public static class PhysicsThread extends Thread {
 
@@ -55,21 +55,22 @@ public class AwesomeMain {
             g.setColor(Color.BLACK);
             g.fillRect((int)platform.position.x, (int)platform.position.y, (int)platform.size.x, (int)platform.size.y);
             g.fillRect((int)platform2.position.x, (int)platform2.position.y, (int)platform2.size.x, (int)platform2.size.y);
+            g.fillRect((int)platform3.position.x, (int)platform3.position.y, (int)platform3.size.x, (int)platform3.size.y);
         }
     }
 
     private static void initialize() {
-        box.restitution = 0.6;
-        box2.restitution = 1.5;
         box.velocity = new Vector2(10, 0);
         box2.velocity = new Vector2(-7.07, -1);
         box.position = new Vector2(100, 0);
         box2.position = new Vector2(300, 0);
         if (!box.collisionObjects.contains(platform)) box.collisionObjects.add(platform);
         if (!box.collisionObjects.contains(platform2)) box.collisionObjects.add(platform2);
+        if (!box.collisionObjects.contains(platform3)) box.collisionObjects.add(platform3);
         if (!box.collisionObjects.contains(box2.collider)) box.collisionObjects.add(box2.collider);
         if (!box2.collisionObjects.contains(platform)) box2.collisionObjects.add(platform);
         if (!box2.collisionObjects.contains(platform2)) box2.collisionObjects.add(platform2);
+        if (!box2.collisionObjects.contains(platform3)) box2.collisionObjects.add(platform3);
         if (!box2.collisionObjects.contains(box.collider)) box2.collisionObjects.add(box.collider);
     }
 
@@ -87,7 +88,7 @@ public class AwesomeMain {
 
         frame.pack();
         frame.setVisible(true);
-        frame.setSize(800, 600);
+        frame.setSize(1920, 1080);
 
         frame.addKeyListener(new KeyAdapter()
         {
