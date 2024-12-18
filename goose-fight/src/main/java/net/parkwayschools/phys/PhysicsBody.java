@@ -41,5 +41,10 @@ public class PhysicsBody
         velocity.add(GRAVITY);
     }
 
+    @Override
+    public String toString() {
+        return String.format("(%.1f,%.1f) V: <%.1f,%.1f> A: <%.1f,%.1f>",position.x,position.y,velocity.x,velocity.y,acceleration.x,acceleration.y);
+    }
+
     public void addForce(Vector2 force) {velocity.add(new Vector2(force.x / mass, force.y / mass)); }
 }
