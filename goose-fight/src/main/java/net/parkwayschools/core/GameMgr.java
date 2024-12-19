@@ -125,7 +125,18 @@ public class GameMgr implements KeyListener {
         rq.add(new RenderObj(new Vector2(0,0),"maps","playplace",false,0));
         //players!
         for (Goose g : _geese){
-            rq.add(new RenderObj(g.body.position,"Goose-idle","rIdle",true,4,true));
+            String sprite = "Idle";
+            int frames = 8;
+            if (currentKeys.contains(KeyEvent.VK_LEFT) || currentKeys.contains(KeyEvent.VK_RIGHT)){
+                sprite = "Running";
+            }
+            if (currentKeys.contains(KeyEvent.VK_DOWN)){
+                frames = 6;
+                sprite = "Crouch";
+            }
+            rq.add(new RenderObj(
+                    g.body.position,
+                    "Goose",sprite,true,frames,true,g._facing == FacingDirection.Left));
         }
         _gfx.submitRenderQueue(rq);
     }
@@ -144,8 +155,14 @@ public class GameMgr implements KeyListener {
             }
             b.update();
         }
-        if (currentKeys.contains(KeyEvent.VK_LEFT) && !p1().walled) p1().velocity = new Vector2(-8, p1().velocity.y);
-        if (currentKeys.contains(KeyEvent.VK_RIGHT) && !p1().walled) p1().velocity = new Vector2(8, p1().velocity.y);
+        if (currentKeys.contains(KeyEvent.VK_LEFT) && !p1().walled){
+            _geese.get(0)._facing = FacingDirection.Left;
+            p1().velocity = new Vector2(-8, p1().velocity.y);
+        }
+        if (currentKeys.contains(KeyEvent.VK_RIGHT) && !p1().walled){
+            _geese.get(0)._facing = FacingDirection.Right;
+            p1().velocity = new Vector2(8, p1().velocity.y);
+        }
 
         updateRender();
     }

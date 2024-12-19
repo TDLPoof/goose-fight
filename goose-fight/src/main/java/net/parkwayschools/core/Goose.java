@@ -10,12 +10,7 @@ public class Goose {
     enum GooseType {
         BasicGoose
     }
-    enum FacingDirection {
-        Left,
-        Right,
-        Up,
-        Down
-    }
+
     GooseType _playerType;
     FacingDirection _facing;
     public PhysicsBody body;

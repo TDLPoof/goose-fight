@@ -1,8 +1,0 @@
-sprite=32x32,dim=8x7
-Idle-pause-1,Idle-pause-2,Idle-down-1,Idle-bob-right-1,Idle-bob-right-2,Idle-bob-right-3,Idle-bob-right-4,Idle-bob-right-5
-Idle-pause-3,Idle-pause-4,Idle-down-2,Idle-bob-left-1,Idle-bob-left-2,Idle-bob-left-3,Idle-bob-left-4,Idle-bob-left-5
-Idle-pause-5,Idle-pause-6,Idle-pause-7,Idle-pause-8,Idle-pause-9,Idle-pause-10,Idle-pause-11,Idle-pause-12
-Idle-pause-13,Running-1,Running-2,Running-3,Running-4,Running-5,Running-6,Running-7
-Running-8,Crouch-1,Crouch-2,Crouch-3,Crouch-4,Crouch-5,Crouch-6,Uncrouch-1
-Uncrouch-2,Uncrouch-3,Uncrouch-4,Uncrouch-5,Uncrouch-6,Walk-back-1,Walk-back-2,Walk-back-3
-Walk-back-4,Walk-back-5,Walk-back-6,Walk-back-7,Walk-back-8

@@ -19,6 +19,7 @@ import java.util.Scanner;
 * */
 public class GfxMgr implements Runnable{
     final int bufferX = 320, bufferY = 160;
+    final int groundLine = 128;
     final double shadowSmearFactor = 0.5;
     static Log log = new Log("core/gfxmgr");
     JFrame _frame;
@@ -97,15 +98,19 @@ public class GfxMgr implements Runnable{
                    int frame = ((Math.min(29,frameCount)/frameDuration+1)%o.animFrames())+1;
                     assert sp != null;
                     spr = sp.spr(o.spriteID()+frame);
+                    if (spr == null) throw new IllegalStateException("Sprite "+o.spriteID()+frame+" does not exist!");
                 } else {
                     assert sp != null;
                     spr = sp.spr(o.spriteID());
+                    if (spr == null) throw new IllegalStateException("Sprite "+o.spriteID()+" does not exist!");
                 }
 
-                if (o.renderShadow()){
 
+                if (o.renderShadow()){
+                    int distanceFromFloor =groundLine- (int)o.pos().y;
+                    distanceFromFloor -= 1; //stupid offset nonsense
                     //darken
-                    ImageFilter filter = new GrayFilter(false, 0);
+                    ImageFilter filter = new GrayFilter(false, 100-(int)(distanceFromFloor*3.7));
                     ImageProducer producer = new FilteredImageSource(spr.getSource(), filter);
                     BufferedImage shPre = toBufferedImage(Toolkit.getDefaultToolkit().createImage(producer));
                     //soften
@@ -119,15 +124,20 @@ public class GfxMgr implements Runnable{
                     blurOp.filter(shPre, sh);
                     //squish
                     AffineTransform at = new AffineTransform();
-                    at.scale((1/shadowSmearFactor)*0.5,shadowSmearFactor*0.5);
+                    double atSX = (1/shadowSmearFactor)*(0.5 - ((distanceFromFloor/10)*0.05));
+                    at.scale( atSX,shadowSmearFactor*0.5);
                     AffineTransformOp scaleOp = new AffineTransformOp(at, AffineTransformOp.TYPE_NEAREST_NEIGHBOR);
                     BufferedImage fina = new BufferedImage((int)(spr.getWidth()*(1/shadowSmearFactor)*0.5),(int)(spr.getHeight()*shadowSmearFactor*0.5),BufferedImage.TYPE_INT_ARGB);
                     scaleOp.filter(sh,fina);
-                    g.drawImage(fina,(int)o.pos().x-4,(int)o.pos().y+spr.getHeight()-12,null);
-                    g.drawImage(spr, (int) o.pos().x, (int) o.pos().y, null);
-                } else {
-                    g.drawImage(spr, (int) o.pos().x, (int) o.pos().y, null);
+
+                    //distance from floor *increases* as the shadow should get smaller. We want to decrease the X component by half the delta in the change
+                    //this is stupid... that is okay!
+                    int widthDistance = spr.getWidth() - (int)(fina.getWidth()*atSX);
+                    widthDistance/=2;
+                  //  log.inf(String.format("%.2f -> %d -> %d",dSF,finaS.getWidth(null),shadowScaleXOff));
+                    g.drawImage(fina,widthDistance+(int)o.pos().x-4+(o.flipHorizontal() ? spr.getWidth() : 0),(int)groundLine+spr.getHeight()-10,fina.getWidth()*(o.flipHorizontal() ? -1 : 1),fina.getHeight(),null);
                 }
+                g.drawImage(spr, (int) o.pos().x+(o.flipHorizontal() ? spr.getWidth() : 0), (int) o.pos().y, spr.getWidth()*(o.flipHorizontal() ? -1 : 1),spr.getHeight(), null);
             }
             //=== Handoff
             _rp.internalBuffer = _framebuffer;
