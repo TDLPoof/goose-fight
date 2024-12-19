@@ -5,8 +5,10 @@ import net.parkwayschools.util.Log;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.color.ColorSpace;
 import java.awt.event.KeyListener;
-import java.awt.image.BufferedImage;
+import java.awt.geom.AffineTransform;
+import java.awt.image.*;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -17,6 +19,7 @@ import java.util.Scanner;
 * */
 public class GfxMgr implements Runnable{
     final int bufferX = 320, bufferY = 160;
+    final double shadowSmearFactor = 0.5;
     static Log log = new Log("core/gfxmgr");
     JFrame _frame;
     RenderPanel _rp;
@@ -62,6 +65,14 @@ public class GfxMgr implements Runnable{
         this._frame.addKeyListener(k);
     }
 
+    public static BufferedImage toBufferedImage(Image img)
+    {
+        BufferedImage res = new BufferedImage(img.getWidth(null), img.getHeight(null), BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g = res.createGraphics();
+        g.drawImage(img, 0, 0, null);
+        return res;
+    }
+
     @Override
     public void run() {
         _rp = new RenderPanel();
@@ -80,17 +91,42 @@ public class GfxMgr implements Runnable{
              //   _framebuffer.getGraphics().drawString(o.toString(),10,y);
                 y+=20;
                 Spritesheet sp = _sheets.get(o.sheetID());
+                BufferedImage spr = null;
                 if (o.isAnim()){
                    int frameDuration = 30/o.animFrames();
                    int frame = ((Math.min(29,frameCount)/frameDuration+1)%o.animFrames())+1;
                     assert sp != null;
-                    g.drawImage(sp.spr(o.spriteID()+frame), (int) o.pos().x, (int) o.pos().y, null);
-                   // g.translate(-o.pos().x,-o.pos().y);
-                //   g.drawString(String.format("%d/%d",frame,o.animFrames()),(int)o.pos().x,(int)o.pos().y);
+                    spr = sp.spr(o.spriteID()+frame);
                 } else {
                     assert sp != null;
-                    g.drawImage(sp.spr(o.spriteID()), (int) o.pos().x, (int) o.pos().y, null);
-                  //  g.translate(-o.pos().x,-o.pos().y);
+                    spr = sp.spr(o.spriteID());
+                }
+
+                if (o.renderShadow()){
+
+                    //darken
+                    ImageFilter filter = new GrayFilter(false, 0);
+                    ImageProducer producer = new FilteredImageSource(spr.getSource(), filter);
+                    BufferedImage shPre = toBufferedImage(Toolkit.getDefaultToolkit().createImage(producer));
+                    //soften
+                    BufferedImage sh = new BufferedImage(spr.getWidth(),spr.getHeight(),BufferedImage.TYPE_INT_ARGB);
+                    float[] matrix = {
+                            0.111f, 0.111f, //0.111f,
+                            0.111f, 0.111f, //0.111f,
+              //              0.111f, 0.111f, 0.111f,
+                    };
+                    BufferedImageOp blurOp = new ConvolveOp( new Kernel(2, 2, matrix) );
+                    blurOp.filter(shPre, sh);
+                    //squish
+                    AffineTransform at = new AffineTransform();
+                    at.scale((1/shadowSmearFactor)*0.5,shadowSmearFactor*0.5);
+                    AffineTransformOp scaleOp = new AffineTransformOp(at, AffineTransformOp.TYPE_NEAREST_NEIGHBOR);
+                    BufferedImage fina = new BufferedImage((int)(spr.getWidth()*(1/shadowSmearFactor)*0.5),(int)(spr.getHeight()*shadowSmearFactor*0.5),BufferedImage.TYPE_INT_ARGB);
+                    scaleOp.filter(sh,fina);
+                    g.drawImage(fina,(int)o.pos().x-4,(int)o.pos().y+spr.getHeight()-12,null);
+                    g.drawImage(spr, (int) o.pos().x, (int) o.pos().y, null);
+                } else {
+                    g.drawImage(spr, (int) o.pos().x, (int) o.pos().y, null);
                 }
             }
             //=== Handoff

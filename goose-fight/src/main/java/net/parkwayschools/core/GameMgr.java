@@ -125,7 +125,7 @@ public class GameMgr implements KeyListener {
         rq.add(new RenderObj(new Vector2(0,0),"maps","playplace",false,0));
         //players!
         for (Goose g : _geese){
-            rq.add(new RenderObj(g.body.position,"Goose-idle","rIdle",true,4));
+            rq.add(new RenderObj(g.body.position,"Goose-idle","rIdle",true,4,true));
         }
         _gfx.submitRenderQueue(rq);
     }
