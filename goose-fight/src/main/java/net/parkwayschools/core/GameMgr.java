@@ -7,7 +7,7 @@ import java.util.ArrayList;
 public class GameMgr {
     GfxManager _gfxman;
     ArrayList<Goose> _geese;
-    ArrayList<Collider> _colliders;
+    //ArrayList<Collider> _colliders;
 
     void runGame(){
 
