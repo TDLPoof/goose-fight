@@ -1,3 +1,5 @@
+package net.parkwayschools.phys;
+
 import java.text.DecimalFormat;
 
 public class Vector2

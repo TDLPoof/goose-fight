@@ -1,3 +1,5 @@
+package net.parkwayschools.phys;
+
 public class Collider {
     public Vector2 position, size;
     public boolean isHurtbox;
