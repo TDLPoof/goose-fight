@@ -23,11 +23,11 @@ public class GfxMgr implements Runnable{
     ArrayList<RenderObj> _currentRQ;
     HashMap<String,Spritesheet> _sheets;
     BufferedImage _framebuffer;
-    Runnable subordinateThread;
+  //  Runnable subordinateThread;
 
-    public GfxMgr(Runnable r){
+    public GfxMgr(){
         _frame = new JFrame("Cool Goose Fighting Game:tm:");
-        subordinateThread = r;
+       // subordinateThread = r;
         _sheets = new HashMap<>();
         _currentRQ = new ArrayList<>();
         _currentRQ.add(new RenderObj(Vector2.zero,"maps","playplace",false,0));
@@ -96,7 +96,7 @@ public class GfxMgr implements Runnable{
             //=== Handoff
             _rp.internalBuffer = _framebuffer;
             _rp.repaint();
-            subordinateThread.run();
+          //  subordinateThread.run();
             try {
                 Thread.sleep(1000/30); //lock at 30FPS rendering, todo: adapt to how long the actual frame pass takes
             } catch (Exception e){

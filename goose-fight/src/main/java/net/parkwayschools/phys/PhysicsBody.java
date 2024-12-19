@@ -43,7 +43,7 @@ public class PhysicsBody
                     position.x -= velocity.x;
                     collider.position = new Vector2(position.x, position.y);
                     velocity.x *= -restitution;
-            //        if (!collider.name.equals("tBox")) System.out.println("Horizontal Intersection Detected [" + collider.name + " | " + c.name + "]");
+                    if (!collider.name.equals("tBox")) System.out.println("Horizontal Intersection Detected [" + collider.name + " | " + c.name + "]");
                     walled = true;
                 }
                 if (collider.goodVertIntersects(c)) {
@@ -53,7 +53,7 @@ public class PhysicsBody
                     jumps = 2;
                     walljumps = 2;
                     velocity.y *= -restitution;
-           //         if (!collider.name.equals("tBox")) System.out.println("Vertical Intersection Detected [" + collider.name + " | " + c.name + "]");
+                    if (!collider.name.equals("tBox")) System.out.println("Vertical Intersection Detected [" + collider.name + " | " + c.name + "]");
                 }
             }
         }
