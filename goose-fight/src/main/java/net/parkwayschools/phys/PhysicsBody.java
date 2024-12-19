@@ -10,6 +10,7 @@ public class PhysicsBody
     public Vector2 position;
     public Vector2 velocity, acceleration;
     public Vector2 drag;
+    public Vector2 groundedDrag;
     public int jumps = 2;
     public int walljumps = 2;
 
@@ -26,6 +27,7 @@ public class PhysicsBody
         acceleration = Vector2.zero;
         mass = m;
         drag = d;
+        groundedDrag = new Vector2(Math.sqrt(1 - (d.x - 1) * (d.x - 1)), d.y);
         restitution = r;
     }
 
@@ -59,7 +61,8 @@ public class PhysicsBody
         }
         velocity.add(acceleration);
         velocity.add(GRAVITY);
-        velocity.mult(new Vector2(1 - drag.x, 1 - drag.y));
+        if (jumps >= 2) velocity.mult(new Vector2(1 - groundedDrag.x, 1 - groundedDrag.y));
+        else velocity.mult(new Vector2(1 - drag.x, 1 - drag.y));
     }
 
     public void addForce(Vector2 force) {velocity.add(new Vector2(force.x / mass, force.y / mass)); }
