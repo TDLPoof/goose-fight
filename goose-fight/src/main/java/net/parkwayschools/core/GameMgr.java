@@ -2,9 +2,11 @@ package net.parkwayschools.core;
 
 import net.parkwayschools.gfx.GfxMgr;
 import net.parkwayschools.gfx.RenderObj;
+import net.parkwayschools.net.NetMgr;
 import net.parkwayschools.phys.Collider;
 import net.parkwayschools.phys.PhysicsBody;
 import net.parkwayschools.phys.Vector2;
+import net.parkwayschools.snd.SndMgr;
 import net.parkwayschools.util.Log;
 
 import javax.swing.*;
@@ -17,13 +19,24 @@ import java.util.HashSet;
 public class GameMgr implements KeyListener {
     static final boolean ENABLE_DBG = false;
     static Log log = new Log("core/gamemgr");
+
+    enum GameState {
+        TITLE_SCREEN,
+        GAMEPLAY,
+        RESULTS_SCREEN;
+
+        boolean physOn(){return this == GAMEPLAY;}
+        boolean scnRenderOn(){ return this != TITLE_SCREEN; }
+    }
+
     ArrayList<Goose> _geese;
     ArrayList<Collider> _fieldColliders;
     ArrayList<PhysicsBody> _bodies;
 
     GfxMgr _gfx;
     Thread _gfxThread;
-    Thread _physThread;
+    NetMgr _net;
+    SndMgr _snd;
 
     JFrame dbgInspector;
     JTextArea dbgPane;
@@ -32,10 +45,13 @@ public class GameMgr implements KeyListener {
 
     void registerGoose(Goose g){
         log.inf("Registering a new goose with the United Geese of the Pond");
-        g.body.position = new Vector2(30,130);
+        g.body.position = new Vector2(30,120);
+        g._facing = (_geese.size() % 2 == 0) ? FacingDirection.Right : FacingDirection.Left;
         _bodies.add(g.body);
+      //  _fieldColliders.add(g.body.collider);
         _geese.add(g);
         g.body.collisionObjects = _fieldColliders;
+
     }
 
     @Override
@@ -45,6 +61,9 @@ public class GameMgr implements KeyListener {
 
     private PhysicsBody p1(){
         return _geese.get(0).body;
+    }
+    private PhysicsBody p2(){
+        return _geese.get(1).body;
     }
 
     @Override
@@ -56,6 +75,14 @@ public class GameMgr implements KeyListener {
         else if (e.getKeyCode() == KeyEvent.VK_UP && p1().walljumps > 0 && p1().walled) {
             p1().velocity = new Vector2(p1().velocity.x, -10);
             p1().walljumps--;
+        }
+        if (e.getKeyCode() == KeyEvent.VK_W && p2().jumps > 0) {
+            p2().velocity = new Vector2(p2().velocity.x, -10);
+            p2().jumps--;
+        }
+        else if (e.getKeyCode() == KeyEvent.VK_W && p2().walljumps > 0 && p2().walled) {
+            p2().velocity = new Vector2(p2().velocity.x, -10);
+            p2().walljumps--;
         }
 
         if (!currentKeys.contains(e.getKeyCode())) currentKeys.add(e.getKeyCode());
@@ -76,7 +103,7 @@ public class GameMgr implements KeyListener {
         return new Collider(x, y, width, height);
     }
     void initField(){
-        Collider platform = createPlatform(0, 160, 500, 10);
+        Collider platform = createPlatform(0, 160, 500, 40);
         Collider wLeft = createPlatform(0, 0, 10, 160);
         Collider wRight = createPlatform(310, 0, 10, 160);
         this._fieldColliders.add(platform);
@@ -99,10 +126,12 @@ public class GameMgr implements KeyListener {
         initField();
 
         log.inf("Starting GFX thread");
-        _gfx = new GfxMgr();
+        _gfx = new GfxMgr(this);
         _gfx.addInputHandler(this);
         _gfxThread = new Thread(_gfx);
         _gfxThread.start();
+        _net = new NetMgr(true);
+        _snd = new SndMgr();
 
         log.inf("Starting Compute thread");
         Thread hermes = new Thread(new Runnable() {
@@ -122,13 +151,19 @@ public class GameMgr implements KeyListener {
 
     void updateRender(){
         ArrayList<RenderObj> rq = new ArrayList<>();
-        rq.add(new RenderObj(new Vector2(0,0),"maps","playplace",false,0));
+        rq.add(new RenderObj(Vector2.zero,"maps","playplace",false,0));
         //players!
         for (Goose g : _geese){
             String sprite = "Idle";
-            int frames = 8;
-            if (currentKeys.contains(KeyEvent.VK_LEFT) || currentKeys.contains(KeyEvent.VK_RIGHT)){
-                sprite = "Running";
+            int frames = 25;
+
+            if (currentKeys.contains(KeyEvent.VK_LEFT) || currentKeys.contains(KeyEvent.VK_A)){
+                frames = 8;
+                sprite = (g._facing == FacingDirection.Right) ? "Walkback" : "Running";
+            }
+            if (currentKeys.contains(KeyEvent.VK_RIGHT) || currentKeys.contains(KeyEvent.VK_D)){
+                frames = 8;
+                sprite = (g._facing == FacingDirection.Left) ? "Walkback" : "Running";
             }
             if (currentKeys.contains(KeyEvent.VK_DOWN)){
                 frames = 6;
@@ -138,6 +173,10 @@ public class GameMgr implements KeyListener {
                     g.body.position,
                     "Goose",sprite,true,frames,true,g._facing == FacingDirection.Left));
         }
+        rq.add(new RenderObj(new Vector2(0,0),"ui","$HUD",false,0,false,false));
+        rq.add(new RenderObj(new Vector2(0,0),"ui","bar_left",false,0,false,false));
+        rq.add(new RenderObj(new Vector2(320-145,0),"ui","bar_right",false,0,false,false));
+
         _gfx.submitRenderQueue(rq);
     }
 
@@ -156,13 +195,24 @@ public class GameMgr implements KeyListener {
             b.update();
         }
         if (currentKeys.contains(KeyEvent.VK_LEFT) && !p1().walled){
-            _geese.get(0)._facing = FacingDirection.Left;
+         //   _geese.get(0)._facing = FacingDirection.Left;
             p1().velocity = new Vector2(-8, p1().velocity.y);
         }
         if (currentKeys.contains(KeyEvent.VK_RIGHT) && !p1().walled){
-            _geese.get(0)._facing = FacingDirection.Right;
+          //  _geese.get(0)._facing = FacingDirection.Right;
             p1().velocity = new Vector2(8, p1().velocity.y);
         }
+
+        if (currentKeys.contains(KeyEvent.VK_A) && !p2().walled){
+         //   _geese.get(1)._facing = FacingDirection.Left;
+            p2().velocity = new Vector2(-8, p2().velocity.y);
+        }
+        if (currentKeys.contains(KeyEvent.VK_D) && !p2().walled){
+          //  _geese.get(1)._facing = FacingDirection.Right;
+            p2().velocity = new Vector2(8, p2().velocity.y);
+        }
+
+
 
         updateRender();
     }

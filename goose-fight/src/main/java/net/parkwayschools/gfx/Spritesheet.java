@@ -23,6 +23,7 @@ public class Spritesheet {
             _meta = SpritesheetMeta.load(id);
         } catch (Exception e){
             log.err("Couldn't load metadata for "+id);
+            e.printStackTrace();
         }
         try {
             _sheet = ImageIO.read(new File(String.format("data/sprite/%s.png", id)));
