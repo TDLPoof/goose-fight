@@ -185,7 +185,11 @@ public class GameMgr implements KeyListener {
             }
             rq.add(new RenderObj(
                     g.body.position,
-                    "Goose",sprite,true,frames,true,g._facing == FacingDirection.Left));
+                    "Jab","Jab",true,11,true,g._facing == FacingDirection.Left));
+
+            //rq.add(new RenderObj(
+            //        g.body.position,
+            //        "Goose",sprite,true,frames,true,g._facing == FacingDirection.Left));
         }
         for (Effect e: _effects){
             rq.add(e.ro());
@@ -195,6 +199,8 @@ public class GameMgr implements KeyListener {
         rq.add(new RenderObj(new Vector2(0,0),"ui","$HUD",false,0,false,false));
         rq.add(new RenderObj(new Vector2(0,0),"ui","bar_left",false,0,false,false));
         rq.add(new RenderObj(new Vector2(320-145,0),"ui","bar_right",false,0,false,false));
+      //  rq.add(new RenderObj(new Vector2(40,40),"Jab","Jab",true,11,false,false));
+      //  rq.add(new RenderObj(new Vector2(80,40),"Jab","Jab",true,11,false,true));
 
 
         _gfx.submitRenderQueue(rq);
@@ -218,20 +224,20 @@ public class GameMgr implements KeyListener {
         }
         if (currentKeys.contains(KeyEvent.VK_LEFT) && !p1().walled){
          //   _geese.get(0)._facing = FacingDirection.Left;
-            p1().velocity = new Vector2(-8, p1().velocity.y);
+            p1().velocity = new Vector2(-6, p1().velocity.y);
         }
         if (currentKeys.contains(KeyEvent.VK_RIGHT) && !p1().walled){
           //  _geese.get(0)._facing = FacingDirection.Right;
-            p1().velocity = new Vector2(8, p1().velocity.y);
+            p1().velocity = new Vector2(6, p1().velocity.y);
         }
 
         if (currentKeys.contains(KeyEvent.VK_A) && !p2().walled){
          //   _geese.get(1)._facing = FacingDirection.Left;
-            p2().velocity = new Vector2(-8, p2().velocity.y);
+            p2().velocity = new Vector2(-6, p2().velocity.y);
         }
         if (currentKeys.contains(KeyEvent.VK_D) && !p2().walled){
           //  _geese.get(1)._facing = FacingDirection.Right;
-            p2().velocity = new Vector2(8, p2().velocity.y);
+            p2().velocity = new Vector2(6, p2().velocity.y);
         }
 
 

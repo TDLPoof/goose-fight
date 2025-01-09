@@ -151,9 +151,9 @@ public class GfxMgr implements Runnable{
                     widthDistance/=2;
                     widthDistance*=(o.flipHorizontal() ? -1 : 1);
 
-                    g.drawImage(fina,widthDistance+(int)o.pos().x-4+(o.flipHorizontal() ? spr.getWidth() : 0),(int)groundLine+spr.getHeight()-10,fina.getWidth()*(o.flipHorizontal() ? -1 : 1),fina.getHeight(),null);
+                    g.drawImage(fina,widthDistance+(int)o.pos().x-4+(o.flipHorizontal() ? spr.getWidth() : 0)+( o.flipHorizontal() ? sp.meta.xOff() : 0),(int)groundLine+spr.getHeight()-10,fina.getWidth()*(o.flipHorizontal() ? -1 : 1),fina.getHeight(),null);
                 }
-                g.drawImage(spr, (int) o.pos().x+(o.flipHorizontal() ? spr.getWidth() : 0), (int) o.pos().y, spr.getWidth()*(o.flipHorizontal() ? -1 : 1),spr.getHeight(), null);
+                g.drawImage(spr, (int) o.pos().x+(o.flipHorizontal() ? spr.getWidth() : 0)+ ( o.flipHorizontal() ? sp.meta.xOff() : 0), (int) o.pos().y, spr.getWidth()*(o.flipHorizontal() ? -1 : 1),spr.getHeight(), null);
             }
             //=== Handoff
             _rp.internalBuffer = _framebuffer;
