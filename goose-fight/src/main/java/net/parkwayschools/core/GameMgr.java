@@ -1,5 +1,6 @@
 package net.parkwayschools.core;
 
+import net.parkwayschools.gfx.Effect;
 import net.parkwayschools.gfx.GfxMgr;
 import net.parkwayschools.gfx.RenderObj;
 import net.parkwayschools.net.NetMgr;
@@ -32,6 +33,7 @@ public class GameMgr implements KeyListener {
     ArrayList<Goose> _geese;
     ArrayList<Collider> _fieldColliders;
     ArrayList<PhysicsBody> _bodies;
+    ArrayList<Effect> _effects;
 
     GfxMgr _gfx;
     Thread _gfxThread;
@@ -43,10 +45,17 @@ public class GameMgr implements KeyListener {
 
     HashSet<Integer> currentKeys = new HashSet<>();
 
-    void registerGoose(Goose g){
+    synchronized void registerGoose(Goose g){
         log.inf("Registering a new goose with the United Geese of the Pond");
         g.body.position = new Vector2(30,120);
         g._facing = (_geese.size() % 2 == 0) ? FacingDirection.Right : FacingDirection.Left;
+        g.body.setGroundedListener(new Runnable() {
+            @Override
+            public void run() {
+                log.inf("Escaping the ground!");
+                _effects.add(new Effect((int)g.body.position.x,(int)g.body.position.y,"particle","A",6, Effect.EffectType.STATIONARY));
+            }
+        });
         _bodies.add(g.body);
       //  _fieldColliders.add(g.body.collider);
         _geese.add(g);
@@ -122,6 +131,7 @@ public class GameMgr implements KeyListener {
 
         _geese = new ArrayList<>();
         _bodies = new ArrayList<>();
+        _effects = new ArrayList<>();
         _fieldColliders = new ArrayList<>();
         initField();
 
@@ -149,7 +159,8 @@ public class GameMgr implements KeyListener {
         hermes.start();
     }
 
-    void updateRender(){
+    synchronized void updateRender(){
+     //   log.inf("UPDR");
         ArrayList<RenderObj> rq = new ArrayList<>();
         rq.add(new RenderObj(Vector2.zero,"maps","playplace",false,0));
         //players!
@@ -157,11 +168,11 @@ public class GameMgr implements KeyListener {
             String sprite = "Idle";
             int frames = 25;
 
-            if (currentKeys.contains(KeyEvent.VK_LEFT) || currentKeys.contains(KeyEvent.VK_A)){
+            if (currentKeys.contains(KeyEvent.VK_LEFT) && _geese.indexOf(g)%2==0 || currentKeys.contains(KeyEvent.VK_A) && _geese.indexOf(g)%2==1){
                 frames = 8;
                 sprite = (g._facing == FacingDirection.Right) ? "Walkback" : "Running";
             }
-            if (currentKeys.contains(KeyEvent.VK_RIGHT) || currentKeys.contains(KeyEvent.VK_D)){
+            if (currentKeys.contains(KeyEvent.VK_RIGHT) && _geese.indexOf(g)%2==0 || currentKeys.contains(KeyEvent.VK_D) && _geese.indexOf(g)%2==1){
                 frames = 8;
                 sprite = (g._facing == FacingDirection.Left) ? "Walkback" : "Running";
             }
@@ -169,30 +180,41 @@ public class GameMgr implements KeyListener {
                 frames = 6;
                 sprite = "Crouch";
             }
+            if (!g.body.grounded){
+           //     rq.add(new RenderObj(g.body.position,"$Text","AIR",false,0,false,false));
+            }
             rq.add(new RenderObj(
                     g.body.position,
                     "Goose",sprite,true,frames,true,g._facing == FacingDirection.Left));
         }
+        for (Effect e: _effects){
+            rq.add(e.ro());
+            e.tick();
+        }
+        _effects.removeIf(Effect::over);
         rq.add(new RenderObj(new Vector2(0,0),"ui","$HUD",false,0,false,false));
         rq.add(new RenderObj(new Vector2(0,0),"ui","bar_left",false,0,false,false));
         rq.add(new RenderObj(new Vector2(320-145,0),"ui","bar_right",false,0,false,false));
 
+
         _gfx.submitRenderQueue(rq);
     }
 
-    void tick(){
+    synchronized void tick(){
+       // log.inf("TICK");
         if (ENABLE_DBG) {
             dbgPane.selectAll();
             dbgPane.replaceSelection("");
-        }
-        for (Goose g : _geese){
-            if (ENABLE_DBG) dbgPane.append(g.body.toString()+"\n");
         }
         for (PhysicsBody b : _bodies){
             if (b.collisionObjects.size() == 0){
                 throw new IllegalStateException();
             }
             b.update();
+        }
+        for (Goose g : _geese){
+            if (ENABLE_DBG) dbgPane.append(g.body.toString()+"\n");
+            if (g.body.groundedLastFrame != g.body.grounded && g.body.grounded) _effects.add(new Effect((int)g.body.position.x,(int)g.body.position.y+30,"particle","A",3, Effect.EffectType.STATIONARY));
         }
         if (currentKeys.contains(KeyEvent.VK_LEFT) && !p1().walled){
          //   _geese.get(0)._facing = FacingDirection.Left;
