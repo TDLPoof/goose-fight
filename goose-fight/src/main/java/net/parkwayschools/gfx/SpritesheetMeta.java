@@ -28,7 +28,7 @@ public record SpritesheetMeta(int spWidth, int spHeight,int th, int tw, String[]
                 }
             }
         }
-        String[][] idMap = new String[tw][th];
+        String[][] idMap = new String[th][tw];
         for (int i = 0; i<th; i++){
             String[] row = fin.nextLine().split(",");
             idMap[i] = row;

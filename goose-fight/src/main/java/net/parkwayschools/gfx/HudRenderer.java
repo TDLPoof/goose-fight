@@ -10,8 +10,21 @@ public class HudRenderer {
     public HudRenderer(GameMgr mg){
         _gm = mg;
     }
+    final Color RED_HP = new Color(190,50,61);
+    final Color BLUE_HP = new Color(54,65,202);
+    final Color BAR_BACKING = new Color(100,100,100);
 
     public void drawHUD(Graphics2D g){
-        
+        //red HP
+        g.setColor(BAR_BACKING);
+        g.fillRect(18,0,102,24);
+        g.setColor(RED_HP);
+        g.fillRect(18,0,80,24);
+
+        //blue HP
+        g.setColor(BAR_BACKING);
+        g.fillRect(320-18-102,0,102,24);
+        g.setColor(BLUE_HP);
+        g.fillRect(320-18-80,0,80,24);
     }
 }

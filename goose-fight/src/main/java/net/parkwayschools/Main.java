@@ -11,6 +11,7 @@ public class Main {
         log.inf("Starting GameMgr");
         GameMgr mg = new GameMgr();
         mg.addGoose();
+        mg.addGoose();
 
         while (true){
             //hold the main thread open
