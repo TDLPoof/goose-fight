@@ -8,11 +8,12 @@ import java.util.Scanner;
 /**
  * Metadata needed for loading a spritesheet file.
  * */
-public record SpritesheetMeta(int spWidth, int spHeight,int th, int tw, String[][] nameMap) {
+public record SpritesheetMeta(int spWidth, int spHeight,int th, int tw, String[][] nameMap, int xOff) {
     public static SpritesheetMeta load(String id) throws FileNotFoundException {
         File f = new File(String.format("data/sprite/%s.spmeta",id));
         Scanner fin = new Scanner(f);
         int sx = 0,sy = 0,th = 0,tw = 0;
+        int xOff = 0;
         String[] mdLines = fin.nextLine().split(",");
         for (String s : mdLines){
             String[] kv = s.split("=");
@@ -26,6 +27,9 @@ public record SpritesheetMeta(int spWidth, int spHeight,int th, int tw, String[]
                     tw = Integer.parseInt(dm[0]);
                     th = Integer.parseInt(dm[1]);
                 }
+                case "x-off" -> {
+                    xOff = Integer.parseInt(dm[0]);
+                }
             }
         }
         String[][] idMap = new String[th][tw];
@@ -33,6 +37,6 @@ public record SpritesheetMeta(int spWidth, int spHeight,int th, int tw, String[]
             String[] row = fin.nextLine().split(",");
             idMap[i] = row;
         }
-        return new SpritesheetMeta(sx,sy,th,tw,idMap);
+        return new SpritesheetMeta(sx,sy,th,tw,idMap,xOff);
     }
 }

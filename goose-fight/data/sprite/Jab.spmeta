@@ -1,0 +1,4 @@
+sprite=64x32,dim=4x3,x-off=-32
+Jab1,Jab2,Jab3,Jab4
+Jab5,Jab6,Jab7,Jab8
+Jab9,Jab10,Jab11,EMPTY
