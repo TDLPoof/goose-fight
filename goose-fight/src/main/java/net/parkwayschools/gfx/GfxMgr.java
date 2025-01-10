@@ -19,8 +19,9 @@ import java.util.Scanner;
 * Implements the graphics and render thread
 * */
 public class GfxMgr implements Runnable{
-    final int bufferX = 320, bufferY = 160;
-    final int groundLine = 128;
+    public final int bufferX = 320, bufferY = 160;
+    public final int groundLine = 128;
+    public final int shadowLine = 140;
     final int animFrameRate = 12;
     final int systemFrameRate = 30;
     final int aFramesPerSFrame = (int)(systemFrameRate/animFrameRate);
@@ -32,6 +33,8 @@ public class GfxMgr implements Runnable{
     HashMap<String,Spritesheet> _sheets;
     BufferedImage _framebuffer;
     HudRenderer _hudR;
+    int[] _heights;
+    int[] _dbgHx;
   //  Runnable subordinateThread;
 
     public GfxMgr(GameMgr m){
@@ -44,6 +47,9 @@ public class GfxMgr implements Runnable{
         _framebuffer =  new BufferedImage(bufferX,bufferY,BufferedImage.TYPE_INT_ARGB);
         _hudR = new HudRenderer(m);
         initSpritesheets();
+        _heights = new int[bufferX];
+        _dbgHx = new int[bufferX];
+        for (int i = 0; i<bufferX; i++) _dbgHx[i] = i;
     }
 
     void initSpritesheets(){
@@ -65,6 +71,9 @@ public class GfxMgr implements Runnable{
     public void submitRenderQueue(ArrayList<RenderObj> ros){
         _currentRQ = ros;
     }
+    public void submitHeightmap(int[] map){
+        _heights = map;
+    }
 
     int frameCount = 0;
 
@@ -79,6 +88,8 @@ public class GfxMgr implements Runnable{
         g.drawImage(img, 0, 0, null);
         return res;
     }
+
+
 
     @Override
     public void run() {
@@ -157,10 +168,29 @@ public class GfxMgr implements Runnable{
                     widthDistance/=2;
                     widthDistance*=(o.flipHorizontal() ? -1 : 1);
 
-                    g.drawImage(fina,widthDistance+(int)o.pos().x-4+(o.flipHorizontal() ? spr.getWidth() : 0)+( o.flipHorizontal() ? sp.meta.xOff() : 0),(int)groundLine+spr.getHeight()-10,fina.getWidth()*(o.flipHorizontal() ? -1 : 1),fina.getHeight(),null);
+                    int renderX = widthDistance+(int)o.pos().x-4/*+(o.flipHorizontal() ? spr.getWidth() : 0)*/+( o.flipHorizontal() ? sp.meta.xOff() : 0);
+
+                    for (int x = renderX; x<renderX+fina.getWidth(); x++){
+                        g.setColor(Color.BLUE);
+                        if (_heights[x] > o.pos().y) //we're below the heightmap value here. Don't render this one
+                           /* g.drawRect(x,_heights[x]-8,1,fina.getHeight());
+                        else*/ g.drawImage(fina.getSubimage(  o.flipHorizontal() ? fina.getWidth() - (x-renderX)-1 : x-renderX,0,1,fina.getHeight()),x,_heights[x]-9,null);
+                    }
                 }
                 g.drawImage(spr, (int) o.pos().x+(o.flipHorizontal() ? spr.getWidth() : 0)+ ( o.flipHorizontal() ? sp.meta.xOff() : 0), (int) o.pos().y, spr.getWidth()*(o.flipHorizontal() ? -1 : 1),spr.getHeight(), null);
             }
+            //== Global shadow
+            if (false) {
+                g.setColor(new Color(0, 0, 0, 20));
+                for (int i = 0; i < bufferX; i++) {
+                    g.drawRect(i, shadowLine, 1, shadowLine - _heights[i]);
+                }
+            }
+            g.setColor(Color.RED);
+
+           // g.drawPolyline(_dbgHx,_heights,bufferX);
+            //== End Debug
+
             //=== Handoffpul
             _rp.internalBuffer = _framebuffer;
             _rp.repaint();

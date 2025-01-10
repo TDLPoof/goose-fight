@@ -44,6 +44,65 @@ public class GameMgr implements KeyListener {
     JTextArea dbgPane;
 
     HashSet<Integer> currentKeys = new HashSet<>();
+    int[] fieldHeightmap;
+
+    void buildHeightmap(){
+        log.inf("Building heightmap");
+        for (int i = 0; i<_gfx.bufferX; i++){
+            int level = _gfx.bufferY;
+            for (Collider c : _fieldColliders){
+                if (c.position.x <= i && i <= c.position.x + c.size.x){
+                    if (c.position.y < level) level = (int)c.position.y;
+                }
+            }
+            fieldHeightmap[i] = level;
+        }
+        _gfx.submitHeightmap(fieldHeightmap);
+    }
+
+    public GameMgr(){
+        if (ENABLE_DBG) {
+            dbgInspector = new JFrame("Dbg");
+            dbgInspector.setVisible(true);
+            dbgInspector.setSize(600, 300);
+            dbgPane = new JTextArea();
+            dbgInspector.add(dbgPane);
+        }
+
+        _geese = new ArrayList<>();
+        _bodies = new ArrayList<>();
+        _effects = new ArrayList<>();
+        _fieldColliders = new ArrayList<>();
+        initField();
+
+        log.inf("Starting GFX thread");
+        _gfx = new GfxMgr(this);
+        _gfx.addInputHandler(this);
+
+        fieldHeightmap = new int[_gfx.bufferX];
+        buildHeightmap();
+
+        _gfxThread = new Thread(_gfx);
+        _gfxThread.start();
+        _net = new NetMgr(true);
+        _snd = new SndMgr();
+        //_snd.setBGM("bgm.fight");
+
+        log.inf("Starting Compute thread");
+        Thread hermes = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                while (true) {
+                    tick();
+                    try {
+                        Thread.sleep(1000 / 24);
+                    } catch (InterruptedException e) {
+                    }
+                }
+            }
+        });
+        hermes.start();
+    }
 
     synchronized void registerGoose(Goose g){
         log.inf("Registering a new goose with the United Geese of the Pond");
@@ -116,49 +175,11 @@ public class GameMgr implements KeyListener {
         Collider platform = createPlatform(0, 160, 500, 40);
         Collider wLeft = createPlatform(0, 0, 10, 160);
         Collider wRight = createPlatform(310, 0, 10, 160);
+        //Collider testPlatform = createPlatform(40,120,120,20);
+        //this._fieldColliders.add(testPlatform);
         this._fieldColliders.add(platform);
         this._fieldColliders.add(wLeft);
         this._fieldColliders.add(wRight);
-    }
-
-    public GameMgr(){
-        if (ENABLE_DBG) {
-            dbgInspector = new JFrame("Dbg");
-            dbgInspector.setVisible(true);
-            dbgInspector.setSize(600, 300);
-            dbgPane = new JTextArea();
-            dbgInspector.add(dbgPane);
-        }
-
-        _geese = new ArrayList<>();
-        _bodies = new ArrayList<>();
-        _effects = new ArrayList<>();
-        _fieldColliders = new ArrayList<>();
-        initField();
-
-        log.inf("Starting GFX thread");
-        _gfx = new GfxMgr(this);
-        _gfx.addInputHandler(this);
-        _gfxThread = new Thread(_gfx);
-        _gfxThread.start();
-        _net = new NetMgr(true);
-        _snd = new SndMgr();
-        _snd.setBGM("bgm.fight");
-
-        log.inf("Starting Compute thread");
-        Thread hermes = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                while (true) {
-                    tick();
-                    try {
-                        Thread.sleep(1000 / 24);
-                    } catch (InterruptedException e) {
-                    }
-                }
-            }
-        });
-        hermes.start();
     }
 
     synchronized void updateRender(){
@@ -200,9 +221,12 @@ public class GameMgr implements KeyListener {
         _effects.removeIf(Effect::over);
         rq.add(new RenderObj(new Vector2(0,0),"ui","$HUD",false,0,false,false));
         rq.add(new RenderObj(new Vector2(0,0),"ui","bar_left",false,0,false,false));
+        rq.add(new RenderObj(new Vector2(0,0),"ui_chars","bar_head_goose",false,0,false,false));
         rq.add(new RenderObj(new Vector2(320-145,0),"ui","bar_right",false,0,false,false));
-      //  rq.add(new RenderObj(new Vector2(40,40),"Jab","Jab",true,11,false,false));
+        rq.add(new RenderObj(new Vector2(320-18,0),"ui_chars","bar_head_goose",false,0,false,true));
+        //  rq.add(new RenderObj(new Vector2(40,40),"Jab","Jab",true,11,false,false));
       //  rq.add(new RenderObj(new Vector2(80,40),"Jab","Jab",true,11,false,true));
+      //  rq.add(new RenderObj(new Vector2(40,120),"test-platform","test-platform",false,0,false,false));
 
 
         _gfx.submitRenderQueue(rq);
@@ -225,20 +249,20 @@ public class GameMgr implements KeyListener {
             if (g.body.groundedLastFrame != g.body.grounded && g.body.grounded) _effects.add(new Effect((int)g.body.position.x,(int)g.body.position.y+30,"particle","A",3, Effect.EffectType.STATIONARY));
         }
         if (currentKeys.contains(KeyEvent.VK_LEFT) && !p1().walled){
-         //   _geese.get(0)._facing = FacingDirection.Left;
+            _geese.get(0)._facing = FacingDirection.Left;
             p1().velocity = new Vector2(-6, p1().velocity.y);
         }
         if (currentKeys.contains(KeyEvent.VK_RIGHT) && !p1().walled){
-          //  _geese.get(0)._facing = FacingDirection.Right;
+            _geese.get(0)._facing = FacingDirection.Right;
             p1().velocity = new Vector2(6, p1().velocity.y);
         }
 
         if (currentKeys.contains(KeyEvent.VK_A) && !p2().walled){
-         //   _geese.get(1)._facing = FacingDirection.Left;
+            _geese.get(1)._facing = FacingDirection.Left;
             p2().velocity = new Vector2(-6, p2().velocity.y);
         }
         if (currentKeys.contains(KeyEvent.VK_D) && !p2().walled){
-          //  _geese.get(1)._facing = FacingDirection.Right;
+            _geese.get(1)._facing = FacingDirection.Right;
             p2().velocity = new Vector2(6, p2().velocity.y);
         }
 
