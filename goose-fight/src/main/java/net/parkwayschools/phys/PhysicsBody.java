@@ -10,16 +10,15 @@ public class PhysicsBody
     public Vector2 position;
     public Vector2 velocity, acceleration;
     public Vector2 drag;
-    public Vector2 crouchDrag;
+    public Vector2 groundedDrag;
     public int jumps = 2;
     public int walljumps = 2;
 
     public boolean grounded = false, walled = false;
-    public boolean groundedLastFrame = false;
-
+    public boolean groundedLastFrame;
+    public boolean crouching = false;
     public Collider collider;
     public ArrayList<Collider> collisionObjects;
-    Runnable _groundedCB;
 
     public PhysicsBody(double x, double y, double width, double height, double m, Vector2 d, double r, String n) {
         collisionObjects = new ArrayList<>();
@@ -29,11 +28,8 @@ public class PhysicsBody
         acceleration = Vector2.zero;
         mass = m;
         drag = d;
-        crouchDrag = new Vector2(Math.sqrt(1 - (d.x - 1) * (d.x - 1)), d.y);
+        groundedDrag = new Vector2(Math.sqrt(1 - (d.x - 1) * (d.x - 1)), d.y);
         restitution = r;
-    }
-    public void setGroundedListener(Runnable r){
-        _groundedCB = r;
     }
 
     public void update() {
@@ -51,14 +47,14 @@ public class PhysicsBody
                     position.x -= velocity.x;
                     collider.position = new Vector2(position.x, position.y);
                     velocity.x *= -restitution;
-              //      if (!collider.name.equals("tBox")) System.out.println("Horizontal Intersection Detected [" + collider.name + " | " + c.name + "]");
+                    //      if (!collider.name.equals("tBox")) System.out.println("Horizontal Intersection Detected [" + collider.name + " | " + c.name + "]");
                     walled = true;
                 }
                 if (collider.goodVertIntersects(c)) {
                     position.y -= velocity.y;
                     collider.position = new Vector2(position.x, position.y);
                     grounded = true;
-                   // if (!groundedLastFrame) _groundedCB.run();
+                    // if (!groundedLastFrame) _groundedCB.run();
                     jumps = 2;
                     walljumps = 2;
                     velocity.y *= -restitution;
@@ -68,8 +64,21 @@ public class PhysicsBody
         }
         velocity.add(acceleration);
         velocity.add(GRAVITY);
-        velocity.mult(new Vector2(1 - drag.x, 1 - drag.y));
+        if (jumps >= 2) velocity.mult(new Vector2(1 - groundedDrag.x, 1 - groundedDrag.y));
+        else velocity.mult(new Vector2(1 - drag.x, 1 - drag.y));
     }
 
     public void addForce(Vector2 force) {velocity.add(new Vector2(force.x / mass, force.y / mass)); }
+
+    public void crouch() {
+        crouching = true;
+        collider.crouch();
+        position = new Vector2(position.x, position.y + collider.size.y);
+    }
+
+    public void uncrouch() {
+        crouching = false;
+        position = new Vector2(position.x, position.y - collider.size.y);
+        collider.uncrouch();
+    }
 }

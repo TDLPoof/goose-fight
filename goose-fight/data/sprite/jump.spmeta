@@ -1,0 +1,4 @@
+sprite=32x32,dim=4x3
+J1,J2,J3,J4
+DJ1,DJ2,DJ3,DJ4
+DJ5,Air,E1,E2
