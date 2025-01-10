@@ -109,16 +109,22 @@ public class GfxMgr implements Runnable{
                 y+=20;
                 Spritesheet sp = _sheets.get(o.sheetID());
                 BufferedImage spr = null;
-                if (o.isAnim()){
-                    int animFrame = frameCount/aFramesPerSFrame;
-                    int frame = (animFrame % o.animFrames())+1;
-                    assert sp != null;
-                    spr = sp.spr(o.spriteID()+frame);
-                    if (spr == null) throw new IllegalStateException("Sprite "+o.spriteID()+frame+" does not exist!");
+                if (sp == null){
+                    log.err("Spritesheet "+o.sheetID()+" doesn't exist. Replacing with nil sprite");
+                    spr = _sheets.get("err").spr("err");
+                    sp = _sheets.get("err");
                 } else {
-                    assert sp != null;
-                    spr = sp.spr(o.spriteID());
-                    if (spr == null) throw new IllegalStateException("Sprite "+o.spriteID()+" does not exist!");
+
+                    if (o.isAnim()) {
+                        int animFrame = frameCount / aFramesPerSFrame;
+                        int frame = (animFrame % o.animFrames()) + 1;
+                        spr = sp.spr(o.spriteID() + frame);
+                        if (spr == null)
+                            spr = _sheets.get("err").spr("err");
+                    } else {
+                        spr = sp.spr(o.spriteID());
+                        if (spr == null) spr = _sheets.get("err").spr("err");
+                    }
                 }
 
 
@@ -155,7 +161,7 @@ public class GfxMgr implements Runnable{
                 }
                 g.drawImage(spr, (int) o.pos().x+(o.flipHorizontal() ? spr.getWidth() : 0)+ ( o.flipHorizontal() ? sp.meta.xOff() : 0), (int) o.pos().y, spr.getWidth()*(o.flipHorizontal() ? -1 : 1),spr.getHeight(), null);
             }
-            //=== Handoff
+            //=== Handoffpul
             _rp.internalBuffer = _framebuffer;
             _rp.repaint();
           //  subordinateThread.run();

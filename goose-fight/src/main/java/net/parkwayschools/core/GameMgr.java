@@ -77,6 +77,7 @@ public class GameMgr implements KeyListener {
 
     @Override
     public void keyPressed(KeyEvent e) {
+        if (e.getKeyCode() == KeyEvent.VK_OPEN_BRACKET) _snd.setBGM("bgm.lobby");
         if (e.getKeyCode() == KeyEvent.VK_UP && p1().jumps > 0) {
             p1().velocity = new Vector2(p1().velocity.x, -10);
             p1().jumps--;
@@ -142,6 +143,7 @@ public class GameMgr implements KeyListener {
         _gfxThread.start();
         _net = new NetMgr(true);
         _snd = new SndMgr();
+        _snd.setBGM("bgm.fight");
 
         log.inf("Starting Compute thread");
         Thread hermes = new Thread(new Runnable() {
@@ -183,13 +185,13 @@ public class GameMgr implements KeyListener {
             if (!g.body.grounded){
            //     rq.add(new RenderObj(g.body.position,"$Text","AIR",false,0,false,false));
             }
-            rq.add(new RenderObj(
-                    g.body.position,
-                    "Jab","Jab",true,11,true,g._facing == FacingDirection.Left));
-
             //rq.add(new RenderObj(
             //        g.body.position,
-            //        "Goose",sprite,true,frames,true,g._facing == FacingDirection.Left));
+            //        "Jab","Jab",true,11,true,g._facing == FacingDirection.Left));
+
+            rq.add(new RenderObj(
+                    g.body.position,
+                    "Goose",sprite,true,frames,true,g._facing == FacingDirection.Left));
         }
         for (Effect e: _effects){
             rq.add(e.ro());
