@@ -4,6 +4,8 @@ import net.parkwayschools.gfx.RenderObj;
 import net.parkwayschools.phys.PhysicsBody;
 import net.parkwayschools.phys.Vector2;
 
+import java.util.Vector;
+
 /***
  * Represents a combatant in the fighting game
  */
@@ -19,6 +21,7 @@ public class Goose {
     enum Animation {
         IDLE,
         AIRIDLE,
+        CROUCHIDLE,
         RUN,
         BACKRUN,
         JUMP,
@@ -49,6 +52,7 @@ public class Goose {
             desired = _interruptAnim;
             _interuptFrames--;
         }
+        Vector2 crouchOffset = new Vector2(body.position.x,body.position.y-body.collider.size.y);
         return switch (desired) {
             case Animation.AIRIDLE -> new RenderObj(body.position,"jump","Air",false,0,true,_facing == FacingDirection.Left);
             case Animation.JUMP -> new RenderObj(
@@ -67,10 +71,13 @@ public class Goose {
                     body.position,
                     "Goose", "Walkback", true, 8, true, _facing == FacingDirection.Left);
             case Animation.CROUCH -> new RenderObj(
-                    body.position,
+                    crouchOffset,
                     "Goose", "Crouch", true, 6, true, _facing == FacingDirection.Left);
+            case Animation.CROUCHIDLE -> new RenderObj(
+                    crouchOffset,
+                    "Goose", "Crouch6", false, 0, true, _facing == FacingDirection.Left);
             case Animation.UNCROUCH -> new RenderObj(
-                    body.position,
+                    crouchOffset,
                     "Goose", "Uncrouch", true, 6, true, _facing == FacingDirection.Left);
 
             case Animation.ATK_JAB -> new RenderObj(

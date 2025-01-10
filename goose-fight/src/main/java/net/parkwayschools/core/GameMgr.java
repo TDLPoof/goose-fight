@@ -108,13 +108,13 @@ public class GameMgr implements KeyListener {
         log.inf("Registering a new goose with the United Geese of the Pond");
         g.body.position = new Vector2(30,120);
         g._facing = (_geese.size() % 2 == 0) ? FacingDirection.Right : FacingDirection.Left;
-        g.body.setGroundedListener(new Runnable() {
-            @Override
-            public void run() {
-                log.inf("Escaping the ground!");
-                _effects.add(new Effect((int)g.body.position.x,(int)g.body.position.y,"particle","A",6, Effect.EffectType.STATIONARY));
-            }
-        });
+//        g.body.setGroundedListener(new Runnable() {
+//            @Override
+//            public void run() {
+//                log.inf("Escaping the ground!");
+//                _effects.add(new Effect((int)g.body.position.x,(int)g.body.position.y,"particle","A",6, Effect.EffectType.STATIONARY));
+//            }
+//        });
         _bodies.add(g.body);
       //  _fieldColliders.add(g.body.collider);
         _geese.add(g);
@@ -158,12 +158,30 @@ public class GameMgr implements KeyListener {
             p2().walljumps--;
         }
 
+        if (e.getKeyCode() == KeyEvent.VK_DOWN && !p1().crouching){
+            log.inf("Crouch");
+            p1().crouch();
+            _geese.get(0).addInterrupt(Goose.Animation.CROUCH);
+        }
+        if (e.getKeyCode() == KeyEvent.VK_S && !p2().crouching){
+            p2().crouch();
+            _geese.get(1).addInterrupt(Goose.Animation.CROUCH);
+        }
+
         if (!currentKeys.contains(e.getKeyCode())) currentKeys.add(e.getKeyCode());
 
     }
 
     @Override
     public void keyReleased(KeyEvent e) {
+        if (e.getKeyCode() == KeyEvent.VK_DOWN){
+            p1().uncrouch();
+            _geese.get(0).addInterrupt(Goose.Animation.UNCROUCH);
+        }
+        if (e.getKeyCode() == KeyEvent.VK_S){
+            p2().uncrouch();
+            _geese.get(1).addInterrupt(Goose.Animation.UNCROUCH);
+        }
         currentKeys.remove(Integer.valueOf(e.getKeyCode()));
     }
 
@@ -193,19 +211,20 @@ public class GameMgr implements KeyListener {
         //players!
         for (Goose g : _geese) {
             g.currentLoopingAnim = g.body.grounded ? Goose.Animation.IDLE : Goose.Animation.AIRIDLE;
+            if (g.body.crouching) g.currentLoopingAnim = Goose.Animation.CROUCHIDLE;
+            else {
 
-            if (currentKeys.contains(KeyEvent.VK_LEFT) && _geese.indexOf(g) % 2 == 0 || currentKeys.contains(KeyEvent.VK_A) && _geese.indexOf(g) % 2 == 1) {
+                if (currentKeys.contains(KeyEvent.VK_LEFT) && _geese.indexOf(g) % 2 == 0 || currentKeys.contains(KeyEvent.VK_A) && _geese.indexOf(g) % 2 == 1) {
 
-                if (g._facing == FacingDirection.Right) g.currentLoopingAnim = Goose.Animation.BACKRUN;
-                else g.currentLoopingAnim = Goose.Animation.RUN;
+                    if (g._facing == FacingDirection.Right) g.currentLoopingAnim = Goose.Animation.BACKRUN;
+                    else g.currentLoopingAnim = Goose.Animation.RUN;
+                }
+                if (currentKeys.contains(KeyEvent.VK_RIGHT) && _geese.indexOf(g) % 2 == 0 || currentKeys.contains(KeyEvent.VK_D) && _geese.indexOf(g) % 2 == 1) {
+                    if (g._facing == FacingDirection.Left) g.currentLoopingAnim = Goose.Animation.BACKRUN;
+                    else g.currentLoopingAnim = Goose.Animation.RUN;
+                }
             }
-            if (currentKeys.contains(KeyEvent.VK_RIGHT) && _geese.indexOf(g) % 2 == 0 || currentKeys.contains(KeyEvent.VK_D) && _geese.indexOf(g) % 2 == 1) {
-                if (g._facing == FacingDirection.Left) g.currentLoopingAnim = Goose.Animation.BACKRUN;
-                else g.currentLoopingAnim = Goose.Animation.RUN;
-            }
-            if (currentKeys.contains(KeyEvent.VK_DOWN)) {
-                g.addInterrupt(Goose.Animation.CROUCH);
-            }
+
             if (!g.body.grounded) {
                 //     rq.add(new RenderObj(g.body.position,"$Text","AIR",false,0,false,false));
             }
@@ -249,20 +268,20 @@ public class GameMgr implements KeyListener {
             if (ENABLE_DBG) dbgPane.append(g.body.toString()+"\n");
             if (g.body.groundedLastFrame != g.body.grounded && g.body.grounded) _effects.add(new Effect((int)g.body.position.x,(int)g.body.position.y+30,"particle","A",3, Effect.EffectType.STATIONARY));
         }
-        if (currentKeys.contains(KeyEvent.VK_LEFT) && !p1().walled){
+        if (currentKeys.contains(KeyEvent.VK_LEFT) && !p1().walled && !p1().crouching){
             _geese.get(0)._facing = FacingDirection.Left;
             p1().velocity = new Vector2(-6, p1().velocity.y);
         }
-        if (currentKeys.contains(KeyEvent.VK_RIGHT) && !p1().walled){
+        if (currentKeys.contains(KeyEvent.VK_RIGHT) && !p1().walled && !p1().crouching){
             _geese.get(0)._facing = FacingDirection.Right;
             p1().velocity = new Vector2(6, p1().velocity.y);
         }
 
-        if (currentKeys.contains(KeyEvent.VK_A) && !p2().walled){
+        if (currentKeys.contains(KeyEvent.VK_A) && !p2().walled && !p2().crouching){
             _geese.get(1)._facing = FacingDirection.Left;
             p2().velocity = new Vector2(-6, p2().velocity.y);
         }
-        if (currentKeys.contains(KeyEvent.VK_D) && !p2().walled){
+        if (currentKeys.contains(KeyEvent.VK_D) && !p2().walled && !p2().crouching){
             _geese.get(1)._facing = FacingDirection.Right;
             p2().velocity = new Vector2(6, p2().velocity.y);
         }
