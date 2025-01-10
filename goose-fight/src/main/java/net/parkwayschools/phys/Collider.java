@@ -1,5 +1,3 @@
-package net.parkwayschools.phys;
-
 public class Collider {
     public Vector2 position, size;
     public boolean isHurtbox;
@@ -61,5 +59,15 @@ public class Collider {
 
     public boolean intersects(Collider other) {
         return horiIntersects(other) && vertIntersects(other);
+    }
+
+    public void crouch() {
+        size = new Vector2(size.x, size.y / 2);
+        position = new Vector2(position.x, position.y + size.y);
+    }
+
+    public void uncrouch() {
+        position = new Vector2(position.x, position.y - size.y);
+        size = new Vector2(size.x, size.y * 2);
     }
 }
