@@ -140,6 +140,8 @@ public class GameMgr implements KeyListener {
         if (e.getKeyCode() == KeyEvent.VK_UP && p1().jumps > 0) {
             p1().velocity = new Vector2(p1().velocity.x, -10);
             p1().jumps--;
+            if (p1().jumps == 1) _geese.get(0).addInterrupt(Goose.Animation.JUMP);
+            if (p1().jumps == 0) _geese.get(0).addInterrupt(Goose.Animation.DOUBLE_JUMP);
         }
         else if (e.getKeyCode() == KeyEvent.VK_UP && p1().walljumps > 0 && p1().walled) {
             p1().velocity = new Vector2(p1().velocity.x, -10);
@@ -148,6 +150,8 @@ public class GameMgr implements KeyListener {
         if (e.getKeyCode() == KeyEvent.VK_W && p2().jumps > 0) {
             p2().velocity = new Vector2(p2().velocity.x, -10);
             p2().jumps--;
+            if (p2().jumps == 1) _geese.get(1).addInterrupt(Goose.Animation.JUMP);
+            if (p2().jumps == 0) _geese.get(1).addInterrupt(Goose.Animation.DOUBLE_JUMP);
         }
         else if (e.getKeyCode() == KeyEvent.VK_W && p2().walljumps > 0 && p2().walled) {
             p2().velocity = new Vector2(p2().velocity.x, -10);
@@ -187,32 +191,29 @@ public class GameMgr implements KeyListener {
         ArrayList<RenderObj> rq = new ArrayList<>();
         rq.add(new RenderObj(Vector2.zero,"maps","playplace",false,0));
         //players!
-        for (Goose g : _geese){
-            String sprite = "Idle";
-            int frames = 25;
+        for (Goose g : _geese) {
+            g.currentLoopingAnim = g.body.grounded ? Goose.Animation.IDLE : Goose.Animation.AIRIDLE;
 
-            if (currentKeys.contains(KeyEvent.VK_LEFT) && _geese.indexOf(g)%2==0 || currentKeys.contains(KeyEvent.VK_A) && _geese.indexOf(g)%2==1){
-                frames = 8;
-                sprite = (g._facing == FacingDirection.Right) ? "Walkback" : "Running";
+            if (currentKeys.contains(KeyEvent.VK_LEFT) && _geese.indexOf(g) % 2 == 0 || currentKeys.contains(KeyEvent.VK_A) && _geese.indexOf(g) % 2 == 1) {
+
+                if (g._facing == FacingDirection.Right) g.currentLoopingAnim = Goose.Animation.BACKRUN;
+                else g.currentLoopingAnim = Goose.Animation.RUN;
             }
-            if (currentKeys.contains(KeyEvent.VK_RIGHT) && _geese.indexOf(g)%2==0 || currentKeys.contains(KeyEvent.VK_D) && _geese.indexOf(g)%2==1){
-                frames = 8;
-                sprite = (g._facing == FacingDirection.Left) ? "Walkback" : "Running";
+            if (currentKeys.contains(KeyEvent.VK_RIGHT) && _geese.indexOf(g) % 2 == 0 || currentKeys.contains(KeyEvent.VK_D) && _geese.indexOf(g) % 2 == 1) {
+                if (g._facing == FacingDirection.Left) g.currentLoopingAnim = Goose.Animation.BACKRUN;
+                else g.currentLoopingAnim = Goose.Animation.RUN;
             }
-            if (currentKeys.contains(KeyEvent.VK_DOWN)){
-                frames = 6;
-                sprite = "Crouch";
+            if (currentKeys.contains(KeyEvent.VK_DOWN)) {
+                g.addInterrupt(Goose.Animation.CROUCH);
             }
-            if (!g.body.grounded){
-           //     rq.add(new RenderObj(g.body.position,"$Text","AIR",false,0,false,false));
+            if (!g.body.grounded) {
+                //     rq.add(new RenderObj(g.body.position,"$Text","AIR",false,0,false,false));
             }
             //rq.add(new RenderObj(
             //        g.body.position,
             //        "Jab","Jab",true,11,true,g._facing == FacingDirection.Left));
 
-            rq.add(new RenderObj(
-                    g.body.position,
-                    "Goose",sprite,true,frames,true,g._facing == FacingDirection.Left));
+            rq.add(g.getRO());
         }
         for (Effect e: _effects){
             rq.add(e.ro());

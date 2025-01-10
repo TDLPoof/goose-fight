@@ -171,6 +171,8 @@ public class GfxMgr implements Runnable{
                     int renderX = widthDistance+(int)o.pos().x-4/*+(o.flipHorizontal() ? spr.getWidth() : 0)*/+( o.flipHorizontal() ? sp.meta.xOff() : 0);
 
                     for (int x = renderX; x<renderX+fina.getWidth(); x++){
+                        x = Math.max(x,0);
+                        x = Math.min(x,320);
                         g.setColor(Color.BLUE);
                         if (_heights[x] > o.pos().y) //we're below the heightmap value here. Don't render this one
                            /* g.drawRect(x,_heights[x]-8,1,fina.getHeight());
