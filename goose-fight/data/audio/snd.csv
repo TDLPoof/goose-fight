@@ -1,0 +1,3 @@
+id,name,type,loops,loopStart,loopEnd
+bgm.fight,fight_song_1.wav,bgm,true,0,109854
+bgm.lobby,goose_fight_lobby.wav,bgm,true,13712,27428
