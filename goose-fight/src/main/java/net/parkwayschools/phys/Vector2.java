@@ -1,3 +1,7 @@
+package net.parkwayschools.phys;
+
+import java.text.DecimalFormat;
+
 public class Vector2
 {
     public static final Vector2 zero = new Vector2(0, 0);
@@ -14,7 +18,16 @@ public class Vector2
         this.y = x;
     }
 
+
+
     @Override public String toString() { return "Vector2(" + x + ", " + y + ")"; }
+
+    public String toString(int dPlaces) {
+        String awesome = "#.";
+        for (int i = 0; i < dPlaces; i++) { awesome += "#"; }
+        DecimalFormat formatter = new DecimalFormat(awesome);
+        return "Vector2(" + formatter.format(x) + ", " + formatter.format(y) + ")";
+    }
 
     public boolean equals(Vector2 other) {
         double tolerance = 1e-6;

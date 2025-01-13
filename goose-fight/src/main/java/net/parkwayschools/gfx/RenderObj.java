@@ -1,4 +1,10 @@
 package net.parkwayschools.gfx;
 
-public record RenderObj(String sheetID, String spriteID, boolean isAnim, int animFrames) {
+import net.parkwayschools.phys.Vector2;
+
+public record RenderObj(Vector2 pos, String sheetID, String spriteID,
+                        boolean isAnim, int animFrames, boolean renderShadow, boolean flipHorizontal) {
+    public RenderObj(Vector2 pos, String sheetID, String spriteID, boolean isAnim, int animFrames){
+       this(pos,sheetID,spriteID,isAnim,animFrames,false,false);
+    }
 }

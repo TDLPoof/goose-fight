@@ -1,44 +1,84 @@
+package net.parkwayschools.phys;
+
 import java.util.ArrayList;
 
 public class PhysicsBody
 {
     public static final Vector2 GRAVITY = new Vector2(0, 0.98);
 
-    public double mass, drag, restitution;
+    public double mass, restitution;
     public Vector2 position;
     public Vector2 velocity, acceleration;
+    public Vector2 drag;
+    public Vector2 groundedDrag;
+    public int jumps = 2;
+    public int walljumps = 2;
 
+    public boolean grounded = false, walled = false;
+    public boolean groundedLastFrame;
+    public boolean crouching = false;
     public Collider collider;
     public ArrayList<Collider> collisionObjects;
 
-    public PhysicsBody(double x, double y, double width, double height, double m, double d, double r) {
+    public PhysicsBody(double x, double y, double width, double height, double m, Vector2 d, double r, String n) {
         collisionObjects = new ArrayList<>();
         position = new Vector2(x, y);
-        collider = new Collider(x, y, width, height);
+        collider = new Collider(x, y, width, height, n);
         velocity = Vector2.zero;
         acceleration = Vector2.zero;
         mass = m;
         drag = d;
+        groundedDrag = new Vector2(Math.sqrt(1 - (d.x - 1) * (d.x - 1)), d.y);
         restitution = r;
     }
 
     public void update() {
+        groundedLastFrame = grounded;
+        grounded = false;
+        walled = false;
         position.add(velocity);
         collider.position = new Vector2(position.x, position.y);
         for (Collider c : collisionObjects) {
             if (collider == c) continue;
             if (c.isHurtbox) continue;
-            if (collider.intersects(c)) {
-                position.sub(velocity);
-                collider.position = new Vector2(position.x, position.y);
 
-                if (collider.horiIntersects(c)) velocity = new Vector2(velocity.x * -restitution, velocity.y);
-                if (collider.vertIntersects(c)) velocity = new Vector2(velocity.x, velocity.y * -restitution);
+            if (collider.intersects(c)) {
+                if (collider.goodHoriIntersects(c)) {
+                    position.x -= velocity.x;
+                    collider.position = new Vector2(position.x, position.y);
+                    velocity.x *= -restitution;
+                    //      if (!collider.name.equals("tBox")) System.out.println("Horizontal Intersection Detected [" + collider.name + " | " + c.name + "]");
+                    walled = true;
+                }
+                if (collider.goodVertIntersects(c)) {
+                    position.y -= velocity.y;
+                    collider.position = new Vector2(position.x, position.y);
+                    grounded = true;
+                    // if (!groundedLastFrame) _groundedCB.run();
+                    jumps = 2;
+                    walljumps = 2;
+                    velocity.y *= -restitution;
+                    //if (!collider.name.equals("tBox")) System.out.println("Vertical Intersection Detected [" + collider.name + " | " + c.name + "]");
+                }
             }
         }
         velocity.add(acceleration);
         velocity.add(GRAVITY);
+        if (jumps >= 2) velocity.mult(new Vector2(1 - groundedDrag.x, 1 - groundedDrag.y));
+        else velocity.mult(new Vector2(1 - drag.x, 1 - drag.y));
     }
 
     public void addForce(Vector2 force) {velocity.add(new Vector2(force.x / mass, force.y / mass)); }
+
+    public void crouch() {
+        crouching = true;
+        collider.crouch();
+        position = new Vector2(position.x, position.y + collider.size.y);
+    }
+
+    public void uncrouch() {
+        crouching = false;
+        position = new Vector2(position.x, position.y - collider.size.y);
+        collider.uncrouch();
+    }
 }
