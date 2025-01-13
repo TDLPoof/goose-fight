@@ -6,7 +6,6 @@ import net.parkwayschools.util.Log;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.color.ColorSpace;
 import java.awt.event.KeyListener;
 import java.awt.geom.AffineTransform;
 import java.awt.image.*;
@@ -35,11 +34,10 @@ public class GfxMgr implements Runnable{
     HudRenderer _hudR;
     int[] _heights;
     int[] _dbgHx;
-  //  Runnable subordinateThread;
 
     public GfxMgr(GameMgr m){
         _frame = new JFrame("Cool Goose Fighting Game:tm:");
-       // subordinateThread = r;
+
         _sheets = new HashMap<>();
         _currentRQ = new ArrayList<>();
         _currentRQ.add(new RenderObj(Vector2.zero,"maps","playplace",false,0));
@@ -73,6 +71,9 @@ public class GfxMgr implements Runnable{
     }
     public void submitHeightmap(int[] map){
         _heights = map;
+    }
+    public BufferedImage getSprite(String sheet, String id){
+        return _sheets.get(sheet).spr(id);
     }
 
     int frameCount = 0;
@@ -116,7 +117,7 @@ public class GfxMgr implements Runnable{
                     _hudR.drawHUD(g);
                     continue;
                 }
-             //   _framebuffer.getGraphics().drawString(o.toString(),10,y);
+
                 y+=20;
                 Spritesheet sp = _sheets.get(o.sheetID());
                 BufferedImage spr = null;
@@ -168,15 +169,13 @@ public class GfxMgr implements Runnable{
                     widthDistance/=2;
                     widthDistance*=(o.flipHorizontal() ? -1 : 1);
 
-                    int renderX = widthDistance+(int)o.pos().x-4/*+(o.flipHorizontal() ? spr.getWidth() : 0)*/+( o.flipHorizontal() ? sp.meta.xOff() : 0);
+                    int renderX = widthDistance+(int)o.pos().x-4+( o.flipHorizontal() ? sp.meta.xOff() : 0);
 
                     for (int x = renderX; x<renderX+fina.getWidth(); x++){
                         x = Math.max(x,0);
                         x = Math.min(x,320);
-                        g.setColor(Color.BLUE);
-                        if (_heights[x] > o.pos().y) //we're below the heightmap value here. Don't render this one
-                           /* g.drawRect(x,_heights[x]-8,1,fina.getHeight());
-                        else*/ g.drawImage(fina.getSubimage(  o.flipHorizontal() ? fina.getWidth() - (x-renderX)-1 : x-renderX,0,1,fina.getHeight()),x,_heights[x]-9,null);
+
+                        if (_heights[x] > o.pos().y) g.drawImage(fina.getSubimage(  o.flipHorizontal() ? fina.getWidth() - (x-renderX)-1 : x-renderX,0,1,fina.getHeight()),x,_heights[x]-9,null);
                     }
                 }
                 g.drawImage(spr, (int) o.pos().x+(o.flipHorizontal() ? spr.getWidth() : 0)+ ( o.flipHorizontal() ? sp.meta.xOff() : 0), (int) o.pos().y, spr.getWidth()*(o.flipHorizontal() ? -1 : 1),spr.getHeight(), null);
@@ -196,9 +195,9 @@ public class GfxMgr implements Runnable{
             //=== Handoffpul
             _rp.internalBuffer = _framebuffer;
             _rp.repaint();
-          //  subordinateThread.run();
+
             try {
-                Thread.sleep(1000/systemFrameRate); //lock at 30FPS rendering, todo: adapt to how long the actual frame pass takes
+                Thread.sleep(1000/systemFrameRate); //lock at 30FPS rendering
             } catch (Exception e){
 
             }

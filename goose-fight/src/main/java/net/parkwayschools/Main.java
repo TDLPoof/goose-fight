@@ -20,21 +20,16 @@ if(false){
         myFrame.setTitle("Goose");
         myFrame.setSize(800, 600);
         myFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-
-        Goose g1 = new Goose();
-        AttackManager g1m = new AttackManager(g1);
-        g1m.start();
-
-
-        myFrame.addKeyListener(g1m);
-        myFrame.setVisible(true);
+//
+//        Goose g1 = new Goose();
+//        AttackManager g1m = new AttackManager(g1);
+//        g1m.start();
+//
+//
+//        myFrame.addKeyListener(g1m);
+//        myFrame.setVisible(true);
 
         //for (;;) { g1m.run(); }
-
-
-
-
-
 } else{
         log.inf("Starting GameMgr");
         GameMgr mg = new GameMgr();

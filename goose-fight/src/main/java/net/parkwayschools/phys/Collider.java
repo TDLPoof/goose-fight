@@ -72,4 +72,9 @@ public class Collider {
         position = new Vector2(position.x, position.y - size.y);
         size = new Vector2(size.x, size.y * 2);
     }
+
+    @Override
+    public String toString() {
+        return String.format("(%.2f,%.2f) w: %.2f, h: %.2f",position.x,position.y,size.x,size.y);
+    }
 }

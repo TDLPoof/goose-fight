@@ -5,6 +5,7 @@ import java.util.ArrayList;
 public class PhysicsBody
 {
     public static final Vector2 GRAVITY = new Vector2(0, 0.98);
+    public static final Vector2 CROUCH_GRAVITY = new Vector2(0,0.98*1.5);
 
     public double mass, restitution;
     public Vector2 position;
@@ -63,7 +64,7 @@ public class PhysicsBody
             }
         }
         velocity.add(acceleration);
-        velocity.add(GRAVITY);
+        velocity.add(crouching ? CROUCH_GRAVITY : GRAVITY);
         if (jumps >= 2) velocity.mult(new Vector2(1 - groundedDrag.x, 1 - groundedDrag.y));
         else velocity.mult(new Vector2(1 - drag.x, 1 - drag.y));
     }
