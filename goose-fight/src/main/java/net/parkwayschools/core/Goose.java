@@ -1,5 +1,11 @@
 package net.parkwayschools.core;
 
+import javax.swing.table.AbstractTableModel;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
+import java.util.EventListener;
+import java.util.HashMap;
+import java.util.Stack;
 import net.parkwayschools.gfx.RenderObj;
 import net.parkwayschools.phys.PhysicsBody;
 import net.parkwayschools.phys.Vector2;
@@ -14,8 +20,11 @@ public class Goose {
         BasicGoose
     }
 
+   
+
     GooseType _playerType;
     FacingDirection _facing;
+    public Attack[] attacks;
     public PhysicsBody body;
 
     enum Animation {

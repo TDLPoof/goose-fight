@@ -287,7 +287,6 @@ public class GameMgr implements KeyListener {
         }
 
 
-
         updateRender();
     }
 }
