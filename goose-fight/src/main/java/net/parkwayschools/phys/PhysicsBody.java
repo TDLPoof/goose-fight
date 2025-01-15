@@ -44,22 +44,21 @@ public class PhysicsBody
             if (c.isHurtbox) continue;
 
             if (collider.intersects(c)) {
-                if (collider.goodHoriIntersects(c)) {
-                    position.x -= velocity.x;
-                    collider.position = new Vector2(position.x, position.y);
-                    velocity.x *= -restitution;
-                    //      if (!collider.name.equals("tBox")) System.out.println("Horizontal Intersection Detected [" + collider.name + " | " + c.name + "]");
-                    walled = true;
-                }
-                if (collider.goodVertIntersects(c)) {
+                if (collider.vertIntersects(c)) {
                     position.y -= velocity.y;
-                    collider.position = new Vector2(position.x, position.y);
+                    velocity.y *= -restitution;
+                    collider.position = new Vector2(position.x + velocity.x, position.y);
                     grounded = true;
-                    // if (!groundedLastFrame) _groundedCB.run();
                     jumps = 2;
                     walljumps = 2;
-                    velocity.y *= -restitution;
-                    //if (!collider.name.equals("tBox")) System.out.println("Vertical Intersection Detected [" + collider.name + " | " + c.name + "]");
+                    if (!collider.name.equals("tBox")) System.out.println("Vertical Intersection Detected [" + collider.name + " | " + c.name + "]");
+                }
+                if (collider.horiIntersects(c)) {
+                    position.x -= velocity.x;
+                    velocity.x *= -restitution;
+                    collider.position = new Vector2(position.x + velocity.x, position.y);
+                    if (!collider.name.equals("tBox")) System.out.println("Horizontal Intersection Detected [" + collider.name + " | " + c.name + "]");
+                    walled = true;
                 }
             }
         }
