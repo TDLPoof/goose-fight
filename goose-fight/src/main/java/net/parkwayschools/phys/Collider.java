@@ -51,12 +51,20 @@ public class Collider {
         return start1 >= start2 && end1 <= end2;
     }
 
+    private boolean partialSubsumption(double start1, double range1, double start2, double range2) {
+        double center1 = start1 + (range1 / 2);
+        double pStart2 = start2 - range1 / 2;
+        double pEnd2 = start2 + range2 + range1 / 2;
+
+        return center1 > pStart2 || center1 < pEnd2;
+    }
+
     public boolean goodHoriIntersects(Collider other) {
-        return subsumeInterval(position.y, size.y, other.position.y, other.size.y) && horiIntersects(other);
+        return partialSubsumption(position.y, size.y, other.position.y, other.size.y) && horiIntersects(other);
     }
 
     public boolean goodVertIntersects(Collider other) {
-        return subsumeInterval(position.x, size.x, other.position.x, other.size.x) && vertIntersects(other);
+        return partialSubsumption(position.x, size.x, other.position.x, other.size.x) && vertIntersects(other);
     }
 
     public boolean intersects(Collider other) {
