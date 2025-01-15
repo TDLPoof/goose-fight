@@ -2,6 +2,7 @@ package net.parkwayschools.core;
 
 import net.parkwayschools.gfx.Effect;
 import net.parkwayschools.gfx.GfxMgr;
+import net.parkwayschools.gfx.HMZone;
 import net.parkwayschools.gfx.RenderObj;
 import net.parkwayschools.net.NetMgr;
 import net.parkwayschools.phys.Collider;
@@ -12,9 +13,11 @@ import net.parkwayschools.util.Log;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
+import java.awt.geom.Line2D;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -28,11 +31,16 @@ public class GameMgr implements KeyListener {
         GAMEPLAY,
         RESULTS_SCREEN;
 
-        boolean physOn(){return this == GAMEPLAY;}
-        boolean scnRenderOn(){ return this != TITLE_SCREEN; }
+        boolean physOn() {
+            return this == GAMEPLAY;
+        }
+
+        boolean scnRenderOn() {
+            return this != TITLE_SCREEN;
+        }
     }
 
-    ArrayList<Goose> _geese;
+    public ArrayList<Goose> geese;
     ArrayList<Collider> _fieldColliders;
     ArrayList<PhysicsBody> _bodies;
     ArrayList<Effect> _effects;
@@ -48,92 +56,203 @@ public class GameMgr implements KeyListener {
     HashSet<Integer> currentKeys = new HashSet<>();
     int[] fieldHeightmap;
 
-    record point(int x, int y){}
+    record point(int x, int y) {
+    }
 
-    point nextToVisit(boolean[][] arr){
-        for (int x = 0; x<arr.length; x++){
-            for (int y = 0; y<arr[x].length; y++){
-                if (!arr[x][y]){
-                    return new point(x,y);
+    point nextToVisit(boolean[][] arr) {
+        for (int x = 0; x < arr.length; x++) {
+            for (int y = 0; y < arr[x].length; y++) {
+                if (!arr[x][y]) {
+                    return new point(x, y);
                 }
             }
         }
-        return new point(-1,-1);
+        return new point(-1, -1);
     }
 
-    ArrayList<Collider> getRectsFromImg(BufferedImage b){
+    int[][] visitMarked;
+
+    ArrayList<Collider> getRectsFromImg(BufferedImage b) {
+
+
+        ArrayList<RenderObj> r = new ArrayList<>();
+        r.add(new RenderObj(Vector2.zero, "$Text", "colmap build", false, 0));
+        _gfx.submitRenderQueue(r);
         ArrayList<Collider> res = new ArrayList<>();
 
         boolean[][] visited = new boolean[b.getWidth()][b.getHeight()];
-        point start = new point(0,0);
-        while (start.x != -1){
+        point start = new point(0, 0);
+        while (start.x != -1) {
             //floodfill-style algorithm. we go in x then in y
-            int rectColor = b.getRGB(start.x,start.y);
+            int rectColor = b.getRGB(start.x, start.y);
+
             int x = start.x;
-            while (x<b.getWidth() && b.getRGB(x,start.y) == rectColor){;
+            while (x < b.getWidth() && b.getRGB(x, start.y) == rectColor) {
+                ;
                 visited[x][start.y] = true;
                 x++;
             }
             x--; //back up one
             int y = start.y;
-            while (y<b.getHeight() && b.getRGB(x,y) == rectColor){
-                for (int ix = start.x; ix<x; ix++) visited[ix][y] = true;
-               // log.dbg("Extending in y");
-                y++;
+            while (y < b.getHeight() && b.getRGB(x, y) == rectColor) {
+                boolean keepGoing = true;
+                for (int ix = start.x; ix < x; ix++) {
+                    if (b.getRGB(ix, y) != rectColor) {
+                        keepGoing = false;
+                        break;
+                    }
+                    visited[ix][y] = true;
+                }
+                // log.dbg("Extending in y");
+                if (keepGoing) y++;
+                else break;
             }
             y--; //back up one
-            if (rectColor == b.getRGB(0,0) && x-start.x > 0 && y-start.y > 0) res.add(new Collider(start.x, start.y, x-start.x,y-start.y));
+            if (rectColor == b.getRGB(0, 0) && x - start.x > 0 && y - start.y > 0)
+                res.add(new Collider(start.x, start.y, x - start.x, y - start.y));
             start = nextToVisit(visited);
         }
-        for (Collider c : res){
+        for (Collider c : res) {
             log.inf(c.toString());
         }
-        log.inf(String.format("Built %d colision rects",res.size()));
+        log.inf(String.format("Built %d colision rects", res.size()));
         return res;
     }
 
-    void buildHeightmap(){
+    ArrayList<HMZone> _zones = new ArrayList<>();
+    void buildHeightmap() {
         log.inf("Building heightmap");
-        for (int i = 0; i<_gfx.bufferX; i++){
+        int runningLevel = -1;
+        int startX = 0;
+        for (int i = 0; i < _gfx.bufferX; i++) {
             int level = _gfx.bufferY;
-            for (Collider c : _fieldColliders){
-                if (c.position.x <= i && i <= c.position.x + c.size.x){
-                    if (c.position.y < level) level = (int)c.position.y;
+            for (Collider c : _fieldColliders) {
+                if (c.position.x <= i && i <= c.position.x + c.size.x) {
+                    if (c.position.y < level) level = (int) c.position.y;
                 }
             }
             fieldHeightmap[i] = level;
+            if (level != runningLevel){
+                _zones.add(new HMZone(startX,i-1,runningLevel));
+                runningLevel = level;
+                startX = i;
+            }
         }
+        _gfx._zones = _zones;
         _gfx.submitHeightmap(fieldHeightmap);
     }
 
-    class wtfIsHappening extends JPanel{
+    int shadowPrecession = 5;
+    int shadowPostcession = 3;
+
+    class wtfIsHappening extends JPanel {
+        int[] _dbgHx = new int[320];
+
+        public wtfIsHappening() {
+            for (int i = 0; i < 320; i++) _dbgHx[i] = i;
+        }
+
         @Override
-        protected void paintComponent(Graphics g) {
-            super.paintComponent(g);
-            g.clearRect(0,0,getWidth(),getHeight());
-            if (_gfx != null) g.drawImage(_gfx.getSprite("maps","playplace.col"),0,0,null);
+        protected void paintComponent(Graphics g1) {
+            super.paintComponent(g1);
+            Graphics2D g = (Graphics2D) g1;
+            g.scale(2, 2);
+            g.clearRect(0, 0, getWidth(), getHeight());
+            //if (_gfx != null) g.drawImage(_gfx.getSprite("maps","playplace.col"),0,0,null);
             g.setColor(Color.BLUE);
             for (Collider c : _fieldColliders)
-                g.drawRect((int)c.position.x*2,(int)c.position.y*2,(int)c.size.x*2,(int)c.size.y*2);
+                g.drawRect((int) c.position.x, (int) c.position.y, (int) c.size.x, (int) c.size.y);
+            g.setColor(Color.GREEN);
+            for (PhysicsBody b : _bodies) {
+                Collider c = b.collider;
+                g.drawRect((int) c.position.x, (int) c.position.y, (int) c.size.x, (int) c.size.y);
+            }
+            g.setFont(new Font("Arial", Font.PLAIN, 5));
+            g.setColor(Color.BLACK);
+
+            Point m = this.getMousePosition();
+            if (m == null) m = new Point(0,0);
+            g.setColor(Color.YELLOW);
+            g.drawOval(m.x,m.y,5,5);
+           // if (fieldHeightmap != null) g.drawPolyline(_dbgHx, fieldHeightmap, 320);
+            if (_zones != null){
+                /*
+                for (int i = 8; i<320; i+=4) {
+                    double sl = i;
+                    Line2D ray = new Line2D.Float(i-8, m.y, i, 170);
+                    for (HMZone z : _zones) {
+                        Rectangle zR = new Rectangle(z.sx,z.height,z.ex-z.sx,10);
+                        boolean works = false;
+                        if (ray.intersects(zR) && z.height < 140) {
+                            g.setColor(Color.BLUE);
+                            works = true;
+                        }
+                        else
+                            g.setColor(Color.ORANGE);
+                        g.drawLine(i-8, m.y, i, 170);
+                        if (works) break;
+                    }
+                }
+                */
+
+
+            }
+
             repaint();
         }
     }
 
-    public GameMgr(){
+    JCheckBox dbgR_BG = new JCheckBox("Render BG");
+    JCheckBox dbgR_Player = new JCheckBox("Render Players");
+    JCheckBox dbgR_FX = new JCheckBox("Render FX");
+    JCheckBox dbgR_HUD = new JCheckBox("Render HUD");
+    JCheckBox dbgR_GShd = new JCheckBox("Render Global Shadow");
+    JCheckBox[] renderPasses = new JCheckBox[]{dbgR_BG, dbgR_FX, dbgR_HUD, dbgR_Player, dbgR_GShd};
+
+    public GameMgr() {
         if (ENABLE_DBG) {
-            dbgInspector = new JFrame("Dbg");
+            dbgInspector = new JFrame("Render Passes");
             dbgInspector.setVisible(true);
+            dbgInspector.setLayout(new FlowLayout());
             dbgInspector.setSize(600, 300);
-            dbgPane = new JTextArea();
-            dbgInspector.add(dbgPane);
+            for (JCheckBox c : renderPasses) {
+                c.setSelected(true);
+                dbgInspector.add(c);
+            }
+            JButton allSpr = new JButton("ALL SPRITE");
+            allSpr.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    for(String sheet : _gfx._sheets.keySet()){
+                        JFrame f = new JFrame(sheet);
+                        f.setSize(400,400);
+                        f.setLayout(new FlowLayout());
+                        String[][] n = _gfx._sheets.get(sheet).meta.nameMap();
+                        for (String[] s : n){
+                            for (String sn : s){
+                                JPanel p = new JPanel();
+                                p.add(new JLabel(sn));
+                                p.add(new JLabel(new ImageIcon(_gfx.getSprite(sheet,sn))));
+                                f.add(p);
+                            }
+                        }
+                        f.setVisible(true);
+                        f.pack();
+                    }
+                }
+            });
+            dbgInspector.add(allSpr);
+            dbgInspector.pack();
         }
-        dbgInspector = new JFrame("Dbg");
-        dbgInspector.setVisible(true);
-        dbgInspector.setSize(600, 300);
-        dbgInspector.add(new wtfIsHappening());
+        if (ENABLE_DBG) {
+            JFrame pInspector = new JFrame("Physics View");
+            pInspector.setVisible(true);
+            pInspector.setSize(320 * 2, 180 * 2);
+            pInspector.add(new wtfIsHappening());
+        }
 
 
-        _geese = new ArrayList<>();
+        geese = new ArrayList<>();
         _bodies = new ArrayList<>();
         _effects = new ArrayList<>();
         _fieldColliders = new ArrayList<>();
@@ -169,10 +288,10 @@ public class GameMgr implements KeyListener {
         hermes.start();
     }
 
-    synchronized void registerGoose(Goose g){
+    synchronized void registerGoose(Goose g) {
         log.inf("Registering a new goose with the United Geese of the Pond");
-        g.body.position = new Vector2(30,120);
-        g._facing = (_geese.size() % 2 == 0) ? FacingDirection.Right : FacingDirection.Left;
+        g.body.position = new Vector2(30, 120);
+        g._facing = (geese.size() % 2 == 0) ? FacingDirection.Right : FacingDirection.Left;
 //        g.body.setGroundedListener(new Runnable() {
 //            @Override
 //            public void run() {
@@ -181,8 +300,8 @@ public class GameMgr implements KeyListener {
 //            }
 //        });
         _bodies.add(g.body);
-      //  _fieldColliders.add(g.body.collider);
-        _geese.add(g);
+        //  _fieldColliders.add(g.body.collider);
+        geese.add(g);
         g.body.collisionObjects = _fieldColliders;
 
     }
@@ -192,45 +311,45 @@ public class GameMgr implements KeyListener {
 
     }
 
-    private PhysicsBody p1(){
-        return _geese.get(0).body;
+    private PhysicsBody p1() {
+        return geese.get(0).body;
     }
-    private PhysicsBody p2(){
-        return _geese.get(1).body;
+
+    private PhysicsBody p2() {
+        return geese.get(1).body;
     }
 
     @Override
     public void keyPressed(KeyEvent e) {
         if (e.getKeyCode() == KeyEvent.VK_OPEN_BRACKET) _snd.setBGM("bgm.lobby");
+        if (e.getKeyCode() == KeyEvent.VK_P) geese.get(0).addInterrupt(Goose.Animation.ATK_JAB);
         if (e.getKeyCode() == KeyEvent.VK_UP && p1().jumps > 0) {
             p1().velocity = new Vector2(p1().velocity.x, -10);
             p1().jumps--;
-            if (p1().jumps == 1) _geese.get(0).addInterrupt(Goose.Animation.JUMP);
-            if (p1().jumps == 0) _geese.get(0).addInterrupt(Goose.Animation.DOUBLE_JUMP);
-        }
-        else if (e.getKeyCode() == KeyEvent.VK_UP && p1().walljumps > 0 && p1().walled) {
+            if (p1().jumps == 1) geese.get(0).addInterrupt(Goose.Animation.JUMP);
+            if (p1().jumps == 0) geese.get(0).addInterrupt(Goose.Animation.DOUBLE_JUMP);
+        } else if (e.getKeyCode() == KeyEvent.VK_UP && p1().walljumps > 0 && p1().walled) {
             p1().velocity = new Vector2(p1().velocity.x, -10);
             p1().walljumps--;
         }
         if (e.getKeyCode() == KeyEvent.VK_W && p2().jumps > 0) {
             p2().velocity = new Vector2(p2().velocity.x, -10);
             p2().jumps--;
-            if (p2().jumps == 1) _geese.get(1).addInterrupt(Goose.Animation.JUMP);
-            if (p2().jumps == 0) _geese.get(1).addInterrupt(Goose.Animation.DOUBLE_JUMP);
-        }
-        else if (e.getKeyCode() == KeyEvent.VK_W && p2().walljumps > 0 && p2().walled) {
+            if (p2().jumps == 1) geese.get(1).addInterrupt(Goose.Animation.JUMP);
+            if (p2().jumps == 0) geese.get(1).addInterrupt(Goose.Animation.DOUBLE_JUMP);
+        } else if (e.getKeyCode() == KeyEvent.VK_W && p2().walljumps > 0 && p2().walled) {
             p2().velocity = new Vector2(p2().velocity.x, -10);
             p2().walljumps--;
         }
 
-        if (e.getKeyCode() == KeyEvent.VK_DOWN && !p1().crouching){
+        if (e.getKeyCode() == KeyEvent.VK_DOWN && !p1().crouching) {
             log.inf("Crouch");
             p1().crouch();
-            _geese.get(0).addInterrupt(Goose.Animation.CROUCH);
+            geese.get(0).addInterrupt(Goose.Animation.CROUCH);
         }
-        if (e.getKeyCode() == KeyEvent.VK_S && !p2().crouching){
+        if (e.getKeyCode() == KeyEvent.VK_S && !p2().crouching) {
             p2().crouch();
-            _geese.get(1).addInterrupt(Goose.Animation.CROUCH);
+            geese.get(1).addInterrupt(Goose.Animation.CROUCH);
         }
 
         if (!currentKeys.contains(e.getKeyCode())) currentKeys.add(e.getKeyCode());
@@ -239,27 +358,28 @@ public class GameMgr implements KeyListener {
 
     @Override
     public void keyReleased(KeyEvent e) {
-        if (e.getKeyCode() == KeyEvent.VK_DOWN){
+        if (e.getKeyCode() == KeyEvent.VK_DOWN) {
             p1().uncrouch();
-            _geese.get(0).addInterrupt(Goose.Animation.UNCROUCH);
+            geese.get(0).addInterrupt(Goose.Animation.UNCROUCH);
         }
-        if (e.getKeyCode() == KeyEvent.VK_S){
+        if (e.getKeyCode() == KeyEvent.VK_S) {
             p2().uncrouch();
-            _geese.get(1).addInterrupt(Goose.Animation.UNCROUCH);
+            geese.get(1).addInterrupt(Goose.Animation.UNCROUCH);
         }
         currentKeys.remove(Integer.valueOf(e.getKeyCode()));
     }
 
 
-    public void addGoose(){
+    public void addGoose() {
         Goose greg = new Goose(this);
     }
 
     private static Collider createPlatform(double x, double y, double width, double height) {
         return new Collider(x, y, width, height);
     }
-    void initField(){
-        this._fieldColliders = getRectsFromImg(_gfx.getSprite("maps","playplace.col"));
+
+    void initField() {
+        this._fieldColliders = getRectsFromImg(_gfx.getSprite("maps", "playplace.col"));
 
 //        Collider platform = createPlatform(0, 160, 500, 40);
 //        Collider wLeft = createPlatform(0, 0, 10, 160);
@@ -271,22 +391,22 @@ public class GameMgr implements KeyListener {
 //        this._fieldColliders.add(wRight);
     }
 
-    synchronized void updateRender(){
-     //   log.inf("UPDR");
+    synchronized void updateRender() {
+        //   log.inf("UPDR");
         ArrayList<RenderObj> rq = new ArrayList<>();
-        rq.add(new RenderObj(Vector2.zero,"maps","playplace",false,0));
+        if (!ENABLE_DBG || dbgR_BG.isSelected()) rq.add(new RenderObj(Vector2.zero, "maps", "playplace", false, 0));
         //players!
-        for (Goose g : _geese) {
-            g.currentLoopingAnim = g.body.grounded ? Goose.Animation.IDLE : Goose.Animation.AIRIDLE;
+        if (!ENABLE_DBG || dbgR_Player.isSelected()) for (Goose g : geese) {
+            g.currentLoopingAnim = (g.body.grounded) ? Goose.Animation.IDLE : Goose.Animation.AIRIDLE;
             if (g.body.crouching) g.currentLoopingAnim = Goose.Animation.CROUCHIDLE;
             else {
 
-                if (currentKeys.contains(KeyEvent.VK_LEFT) && _geese.indexOf(g) % 2 == 0 || currentKeys.contains(KeyEvent.VK_A) && _geese.indexOf(g) % 2 == 1) {
+                if (currentKeys.contains(KeyEvent.VK_LEFT) && geese.indexOf(g) % 2 == 0 || currentKeys.contains(KeyEvent.VK_A) && geese.indexOf(g) % 2 == 1) {
 
                     if (g._facing == FacingDirection.Right) g.currentLoopingAnim = Goose.Animation.BACKRUN;
                     else g.currentLoopingAnim = Goose.Animation.RUN;
                 }
-                if (currentKeys.contains(KeyEvent.VK_RIGHT) && _geese.indexOf(g) % 2 == 0 || currentKeys.contains(KeyEvent.VK_D) && _geese.indexOf(g) % 2 == 1) {
+                if (currentKeys.contains(KeyEvent.VK_RIGHT) && geese.indexOf(g) % 2 == 0 || currentKeys.contains(KeyEvent.VK_D) && geese.indexOf(g) % 2 == 1) {
                     if (g._facing == FacingDirection.Left) g.currentLoopingAnim = Goose.Animation.BACKRUN;
                     else g.currentLoopingAnim = Goose.Animation.RUN;
                 }
@@ -301,58 +421,64 @@ public class GameMgr implements KeyListener {
 
             rq.add(g.getRO());
         }
-        for (Effect e: _effects){
+        if (!ENABLE_DBG || dbgR_FX.isSelected()) for (Effect e : _effects) {
             rq.add(e.ro());
             e.tick();
         }
+        // rq.add(new RenderObj(Vector2.zero,"maps","playplace.pfm",false,0,true,false));
         _effects.removeIf(Effect::over);
-        rq.add(new RenderObj(new Vector2(0,0),"ui","$HUD",false,0,false,false));
-        rq.add(new RenderObj(new Vector2(0,0),"ui","bar_left",false,0,false,false));
-        rq.add(new RenderObj(new Vector2(0,0),"ui_chars","bar_head_goose",false,0,false,false));
-        rq.add(new RenderObj(new Vector2(320-145,0),"ui","bar_right",false,0,false,false));
-        rq.add(new RenderObj(new Vector2(320-18,0),"ui_chars","bar_head_goose",false,0,false,true));
+        if (!ENABLE_DBG || dbgR_GShd.isSelected()) rq.add(new RenderObj(new Vector2(shadowPostcession,shadowPrecession), "$Global", "shadow2", false, 0));
+        //     rq.add(new RenderObj(Vector2.zero,"maps","playplace.pfm",false,0,true,false,false));
+
+        if (!ENABLE_DBG || dbgR_HUD.isSelected()) {
+            rq.add(new RenderObj(new Vector2(0, 0), "ui", "$HUD", false, 0, false, false));
+            rq.add(new RenderObj(new Vector2(0, 0), "ui", "bar_left", false, 0, false, false));
+            rq.add(new RenderObj(new Vector2(0, 0), "ui_chars", "bar_head_goose", false, 0, false, false));
+            rq.add(new RenderObj(new Vector2(320 - 145, 0), "ui", "bar_right", false, 0, false, false));
+            rq.add(new RenderObj(new Vector2(320 - 18, 0), "ui_chars", "bar_head_goose", false, 0, false, true));
+        }
         //  rq.add(new RenderObj(new Vector2(40,40),"Jab","Jab",true,11,false,false));
-      //  rq.add(new RenderObj(new Vector2(80,40),"Jab","Jab",true,11,false,true));
-      //  rq.add(new RenderObj(new Vector2(40,120),"test-platform","test-platform",false,0,false,false));
+        //  rq.add(new RenderObj(new Vector2(80,40),"Jab","Jab",true,11,false,true));
+        //  rq.add(new RenderObj(new Vector2(40,120),"test-platform","test-platform",false,0,false,false));
 
 
         _gfx.submitRenderQueue(rq);
     }
 
-    synchronized void tick(){
-       // log.inf("TICK");
-        if (ENABLE_DBG) {
-            dbgPane.selectAll();
-            dbgPane.replaceSelection("");
-        }
-        for (PhysicsBody b : _bodies){
-            if (b.collisionObjects.size() == 0){
+    synchronized void tick() {
+        // log.inf("TICK");
+//        if (ENABLE_DBG) {
+//            dbgPane.selectAll();
+//            dbgPane.replaceSelection("");
+//        }
+        for (PhysicsBody b : _bodies) {
+            if (b.collisionObjects.size() == 0) {
                 throw new IllegalStateException();
             }
             b.update();
         }
-        for (Goose g : _geese){
-            if (ENABLE_DBG) dbgPane.append(g.body.toString()+"\n");
-            if (g.body.groundedLastFrame != g.body.grounded && g.body.grounded) _effects.add(new Effect((int)g.body.position.x,(int)g.body.position.y+30,"particle","A",3, Effect.EffectType.STATIONARY));
+        for (Goose g : geese) {
+            //  if (ENABLE_DBG) dbgPane.append(g.body.toString()+"\n");
+            if (g.body.groundedLastFrame != g.body.grounded && g.body.grounded)
+                _effects.add(new Effect((int) g.body.position.x, (int) g.body.position.y + 30, "particle", "A", 3, Effect.EffectType.STATIONARY));
         }
-        if (currentKeys.contains(KeyEvent.VK_LEFT) && !p1().walled && !p1().crouching){
-            _geese.get(0)._facing = FacingDirection.Left;
+        if (currentKeys.contains(KeyEvent.VK_LEFT) && !p1().walled && !p1().crouching) {
+            geese.get(0)._facing = FacingDirection.Left;
             p1().velocity = new Vector2(-6, p1().velocity.y);
         }
-        if (currentKeys.contains(KeyEvent.VK_RIGHT) && !p1().walled && !p1().crouching){
-            _geese.get(0)._facing = FacingDirection.Right;
+        if (currentKeys.contains(KeyEvent.VK_RIGHT) && !p1().walled && !p1().crouching) {
+            geese.get(0)._facing = FacingDirection.Right;
             p1().velocity = new Vector2(6, p1().velocity.y);
         }
 
-        if (currentKeys.contains(KeyEvent.VK_A) && !p2().walled && !p2().crouching){
-            _geese.get(1)._facing = FacingDirection.Left;
+        if (currentKeys.contains(KeyEvent.VK_A) && !p2().walled && !p2().crouching) {
+            geese.get(1)._facing = FacingDirection.Left;
             p2().velocity = new Vector2(-6, p2().velocity.y);
         }
-        if (currentKeys.contains(KeyEvent.VK_D) && !p2().walled && !p2().crouching){
-            _geese.get(1)._facing = FacingDirection.Right;
+        if (currentKeys.contains(KeyEvent.VK_D) && !p2().walled && !p2().crouching) {
+            geese.get(1)._facing = FacingDirection.Right;
             p2().velocity = new Vector2(6, p2().velocity.y);
         }
-
 
 
         updateRender();
