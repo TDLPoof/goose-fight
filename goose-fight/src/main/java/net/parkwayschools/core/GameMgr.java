@@ -23,7 +23,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 
 public class GameMgr implements KeyListener {
-    static final boolean ENABLE_DBG = false;
+    static final boolean ENABLE_DBG = true;
     static Log log = new Log("core/gamemgr");
 
     enum GameState {
@@ -40,7 +40,7 @@ public class GameMgr implements KeyListener {
         }
     }
 
-    public ArrayList<Goose> geese;
+    public static ArrayList<Goose> geese;
     ArrayList<Collider> _fieldColliders;
     ArrayList<PhysicsBody> _bodies;
     ArrayList<Effect> _effects;
@@ -142,10 +142,11 @@ public class GameMgr implements KeyListener {
         _gfx.submitHeightmap(fieldHeightmap);
     }
 
-    int shadowPrecession = 5;
-    int shadowPostcession = 3;
+    int shadowPrecession = -2;
+    int shadowPostcession = -2;
 
-    class wtfIsHappening extends JPanel {
+    public class wtfIsHappening extends JPanel {
+        public static Collider HELPMEPLEASE = new Collider(0,0,0,0,"");
         int[] _dbgHx = new int[320];
 
         public wtfIsHappening() {
@@ -166,7 +167,11 @@ public class GameMgr implements KeyListener {
             for (PhysicsBody b : _bodies) {
                 Collider c = b.collider;
                 g.drawRect((int) c.position.x, (int) c.position.y, (int) c.size.x, (int) c.size.y);
+                g.drawLine((int) c.position.x, (int) c.position.y+(int)c.size.y/2,(int) c.position.x+(int)(c.size.x/2)-30, (int) (int) c.position.y+(int)c.size.y/2);
+                g.drawLine((int) c.position.x, (int) c.position.y+(int)c.size.y/2,(int) c.position.x+(int)(c.size.x/2)+30,(int) c.position.y+(int)c.size.y/2);
             }
+            g.setColor(Color.RED);
+            g.drawRect((int) HELPMEPLEASE.position.x, (int) HELPMEPLEASE.position.y, (int) HELPMEPLEASE.size.x, (int) HELPMEPLEASE.size.y);
             g.setFont(new Font("Arial", Font.PLAIN, 5));
             g.setColor(Color.BLACK);
 
@@ -270,6 +275,7 @@ public class GameMgr implements KeyListener {
         _snd = new SndMgr();
         initField();
         buildHeightmap();
+
         //_snd.setBGM("bgm.fight");
 
         log.inf("Starting Compute thread");
@@ -301,6 +307,7 @@ public class GameMgr implements KeyListener {
 //        });
         _bodies.add(g.body);
         //  _fieldColliders.add(g.body.collider);
+        _gfx.addInputHandler(g.manager);
         geese.add(g);
         g.body.collisionObjects = _fieldColliders;
 
@@ -322,12 +329,12 @@ public class GameMgr implements KeyListener {
     @Override
     public void keyPressed(KeyEvent e) {
         if (e.getKeyCode() == KeyEvent.VK_OPEN_BRACKET) _snd.setBGM("bgm.lobby");
-        if (e.getKeyCode() == KeyEvent.VK_P) geese.get(0).addInterrupt(Goose.Animation.ATK_JAB);
+        if (e.getKeyCode() == KeyEvent.VK_P) geese.get(0).addInterrupt(Animation.ATK_JAB);
         if (e.getKeyCode() == KeyEvent.VK_UP && p1().jumps > 0) {
             p1().velocity = new Vector2(p1().velocity.x, -10);
             p1().jumps--;
-            if (p1().jumps == 1) geese.get(0).addInterrupt(Goose.Animation.JUMP);
-            if (p1().jumps == 0) geese.get(0).addInterrupt(Goose.Animation.DOUBLE_JUMP);
+            if (p1().jumps == 1) geese.get(0).addInterrupt(Animation.JUMP);
+            if (p1().jumps == 0) geese.get(0).addInterrupt(Animation.DOUBLE_JUMP);
         } else if (e.getKeyCode() == KeyEvent.VK_UP && p1().walljumps > 0 && p1().walled) {
             p1().velocity = new Vector2(p1().velocity.x, -10);
             p1().walljumps--;
@@ -335,8 +342,8 @@ public class GameMgr implements KeyListener {
         if (e.getKeyCode() == KeyEvent.VK_W && p2().jumps > 0) {
             p2().velocity = new Vector2(p2().velocity.x, -10);
             p2().jumps--;
-            if (p2().jumps == 1) geese.get(1).addInterrupt(Goose.Animation.JUMP);
-            if (p2().jumps == 0) geese.get(1).addInterrupt(Goose.Animation.DOUBLE_JUMP);
+            if (p2().jumps == 1) geese.get(1).addInterrupt(Animation.JUMP);
+            if (p2().jumps == 0) geese.get(1).addInterrupt(Animation.DOUBLE_JUMP);
         } else if (e.getKeyCode() == KeyEvent.VK_W && p2().walljumps > 0 && p2().walled) {
             p2().velocity = new Vector2(p2().velocity.x, -10);
             p2().walljumps--;
@@ -345,11 +352,11 @@ public class GameMgr implements KeyListener {
         if (e.getKeyCode() == KeyEvent.VK_DOWN && !p1().crouching) {
             log.inf("Crouch");
             p1().crouch();
-            geese.get(0).addInterrupt(Goose.Animation.CROUCH);
+            geese.get(0).addInterrupt(Animation.CROUCH);
         }
         if (e.getKeyCode() == KeyEvent.VK_S && !p2().crouching) {
             p2().crouch();
-            geese.get(1).addInterrupt(Goose.Animation.CROUCH);
+            geese.get(1).addInterrupt(Animation.CROUCH);
         }
 
         if (!currentKeys.contains(e.getKeyCode())) currentKeys.add(e.getKeyCode());
@@ -360,11 +367,11 @@ public class GameMgr implements KeyListener {
     public void keyReleased(KeyEvent e) {
         if (e.getKeyCode() == KeyEvent.VK_DOWN) {
             p1().uncrouch();
-            geese.get(0).addInterrupt(Goose.Animation.UNCROUCH);
+            geese.get(0).addInterrupt(Animation.UNCROUCH);
         }
         if (e.getKeyCode() == KeyEvent.VK_S) {
             p2().uncrouch();
-            geese.get(1).addInterrupt(Goose.Animation.UNCROUCH);
+            geese.get(1).addInterrupt(Animation.UNCROUCH);
         }
         currentKeys.remove(Integer.valueOf(e.getKeyCode()));
     }
@@ -397,18 +404,18 @@ public class GameMgr implements KeyListener {
         if (!ENABLE_DBG || dbgR_BG.isSelected()) rq.add(new RenderObj(Vector2.zero, "maps", "playplace", false, 0));
         //players!
         if (!ENABLE_DBG || dbgR_Player.isSelected()) for (Goose g : geese) {
-            g.currentLoopingAnim = (g.body.grounded) ? Goose.Animation.IDLE : Goose.Animation.AIRIDLE;
-            if (g.body.crouching) g.currentLoopingAnim = Goose.Animation.CROUCHIDLE;
+            g.currentLoopingAnim = (g.body.grounded) ? Animation.IDLE : Animation.AIRIDLE;
+            if (g.body.crouching) g.currentLoopingAnim = Animation.CROUCHIDLE;
             else {
 
                 if (currentKeys.contains(KeyEvent.VK_LEFT) && geese.indexOf(g) % 2 == 0 || currentKeys.contains(KeyEvent.VK_A) && geese.indexOf(g) % 2 == 1) {
 
-                    if (g._facing == FacingDirection.Right) g.currentLoopingAnim = Goose.Animation.BACKRUN;
-                    else g.currentLoopingAnim = Goose.Animation.RUN;
+                    if (g._facing == FacingDirection.Right) g.currentLoopingAnim = Animation.BACKRUN;
+                    else g.currentLoopingAnim = Animation.RUN;
                 }
                 if (currentKeys.contains(KeyEvent.VK_RIGHT) && geese.indexOf(g) % 2 == 0 || currentKeys.contains(KeyEvent.VK_D) && geese.indexOf(g) % 2 == 1) {
-                    if (g._facing == FacingDirection.Left) g.currentLoopingAnim = Goose.Animation.BACKRUN;
-                    else g.currentLoopingAnim = Goose.Animation.RUN;
+                    if (g._facing == FacingDirection.Left) g.currentLoopingAnim = Animation.BACKRUN;
+                    else g.currentLoopingAnim = Animation.RUN;
                 }
             }
 
@@ -425,7 +432,7 @@ public class GameMgr implements KeyListener {
             rq.add(e.ro());
             e.tick();
         }
-        // rq.add(new RenderObj(Vector2.zero,"maps","playplace.pfm",false,0,true,false));
+        rq.add(new RenderObj(Vector2.zero,"maps","playplace.pfm",false,0,false,false));
         _effects.removeIf(Effect::over);
         if (!ENABLE_DBG || dbgR_GShd.isSelected()) rq.add(new RenderObj(new Vector2(shadowPostcession,shadowPrecession), "$Global", "shadow2", false, 0));
         //     rq.add(new RenderObj(Vector2.zero,"maps","playplace.pfm",false,0,true,false,false));

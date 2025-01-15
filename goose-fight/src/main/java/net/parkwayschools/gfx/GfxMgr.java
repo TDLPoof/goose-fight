@@ -189,6 +189,8 @@ public class GfxMgr implements Runnable{
                     if (!o.shadowRespectsGroundplane()) distanceFromFloor = 10;
                     double atSX = (1/shadowSmearFactor)*(0.5 - ((distanceFromFloor/10)*0.05));
                     double atSY = shadowSmearFactor*(0.5 - ((distanceFromFloor/10)*0.02));
+                    if (atSX == 0) atSX = 0.01;
+                    if (atSY == 0) atSY = 0.01;
                     at.scale( atSX,atSY);
                     AffineTransformOp scaleOp = new AffineTransformOp(at, AffineTransformOp.TYPE_NEAREST_NEIGHBOR);
                     BufferedImage fina = new BufferedImage((int)(spr.getWidth()*(1/shadowSmearFactor)*0.5),(int)(spr.getHeight()*shadowSmearFactor*0.5),BufferedImage.TYPE_INT_ARGB);

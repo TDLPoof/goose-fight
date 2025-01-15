@@ -1,6 +1,6 @@
 package net.parkwayschools.core;
 
-enum FacingDirection {
+public enum FacingDirection {
     Left,
     Right,
     Up,

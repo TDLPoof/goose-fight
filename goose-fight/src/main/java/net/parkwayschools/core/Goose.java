@@ -6,6 +6,8 @@ import java.awt.event.KeyListener;
 import java.util.EventListener;
 import java.util.HashMap;
 import java.util.Stack;
+
+import net.parkwayschools.core.atk.Jab;
 import net.parkwayschools.gfx.RenderObj;
 import net.parkwayschools.phys.PhysicsBody;
 import net.parkwayschools.phys.Vector2;
@@ -23,24 +25,11 @@ public class Goose {
    
 
     GooseType _playerType;
-    FacingDirection _facing;
+    public FacingDirection _facing;
     public Attack[] attacks;
     public PhysicsBody body;
-    StateManager manager;
+    public StateManager manager;
     public int health;
-
-    enum Animation {
-        IDLE,
-        AIRIDLE,
-        CROUCHIDLE,
-        RUN,
-        BACKRUN,
-        JUMP,
-        DOUBLE_JUMP,
-        UNCROUCH,
-        CROUCH,
-        ATK_JAB;
-    }
 
     public Animation currentLoopingAnim;
     Animation _interruptAnim;
@@ -61,6 +50,7 @@ public class Goose {
 
 
     RenderObj getRO(){
+        this.manager.run();
         Animation desired = currentLoopingAnim;
         if (_interuptFrames > 0) {
             desired = _interruptAnim;
@@ -104,12 +94,16 @@ public class Goose {
     }
 
     public Goose(GameMgr m){
-        this.attacks = new Attack[]{new Attack(1000, KeyEvent.VK_K), new Attack(2000, KeyEvent.VK_1)};
+        if (GameMgr.geese.size() == 0)
+            this.attacks = new Attack[]{new Jab(KeyEvent.VK_SLASH)};
+        else
+            this.attacks = new Attack[]{new Jab(KeyEvent.VK_R)};
         health = 100;
         this._playerType = GooseType.BasicGoose;
         this._facing = FacingDirection.Right;
         this.body = new PhysicsBody(0.,0.,32.,32.,1.,new Vector2(0.15, 0.1),0.04,"");
         this.manager = new StateManager(this);
+
         //AT THE END OF THE CONSTRUCTOR. DON'T LEAK THIS BEFORE YOU HAVE TO (we leak because easy lol)
         m.registerGoose(this);
     }
@@ -118,13 +112,13 @@ public class Goose {
 
     public StateManager getManager() { return manager; }
 
-    public void runManager() { 
-        while (manager.isRunning()) {
-            manager.run();
-        } 
-    }
-    public void interruptState(State s) { 
-        manager.interrupt();
-        manager.addState(s);
-    }
+//    public void runManager() {
+//        while (manager.isRunning()) {
+//            manager.run();
+//        }
+//    }
+//    public void interruptState(State s) {
+//        manager.interrupt();
+//        manager.addState(s);
+//    }
 }

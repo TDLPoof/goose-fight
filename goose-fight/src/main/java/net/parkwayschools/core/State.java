@@ -1,7 +1,11 @@
+package net.parkwayschools.core;
 public class State implements Runnable {
     protected long framesActive; // make sure any processes you do here do not exceed this value! 
     protected Goose focus;
     public volatile boolean running = true;
+    public boolean hasFiredAttack;
+    public Animation attackAnim;
+    protected long ogFramesActive;
 
     public State(State s) {
         framesActive = s.getFramesActive();
@@ -9,6 +13,11 @@ public class State implements Runnable {
 
     public State(long f) {
         this.framesActive = f;
+        this.ogFramesActive = framesActive;
+    }
+    public void reset(){
+        this.framesActive = ogFramesActive;
+        this.hasFiredAttack = false;
     }
 
     public void setFocus(Goose g) { this.focus = g; }
