@@ -14,20 +14,13 @@ public class State implements Runnable {
     public void setFocus(Goose g) { this.focus = g; }
     public long getFramesActive() { return this.framesActive; }
     
-    public void stop() { 
-        running = false; 
-        System.out.println("State stopped.");
-    }
-
     @Override public String toString() {return "state, active for " + framesActive + " on " + focus; }
 
     @Override public void run() {
-        running = true; 
-        while (running) {
+        try {
             System.out.println("State occuring for " + this.framesActive + " state");
-            try { Thread.sleep(this.getFramesActive()); }
-            catch(InterruptedException e) {}
-            running = false;
+            Thread.sleep(this.getFramesActive()); 
         }
+        catch(InterruptedException e) {}
     }
 }
