@@ -11,9 +11,11 @@ import net.parkwayschools.snd.SndMgr;
 import net.parkwayschools.util.Log;
 
 import javax.swing.*;
+import java.awt.*;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
+import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.HashSet;
 
@@ -46,6 +48,50 @@ public class GameMgr implements KeyListener {
     HashSet<Integer> currentKeys = new HashSet<>();
     int[] fieldHeightmap;
 
+    record point(int x, int y){}
+
+    point nextToVisit(boolean[][] arr){
+        for (int x = 0; x<arr.length; x++){
+            for (int y = 0; y<arr[x].length; y++){
+                if (!arr[x][y]){
+                    return new point(x,y);
+                }
+            }
+        }
+        return new point(-1,-1);
+    }
+
+    ArrayList<Collider> getRectsFromImg(BufferedImage b){
+        ArrayList<Collider> res = new ArrayList<>();
+
+        boolean[][] visited = new boolean[b.getWidth()][b.getHeight()];
+        point start = new point(0,0);
+        while (start.x != -1){
+            //floodfill-style algorithm. we go in x then in y
+            int rectColor = b.getRGB(start.x,start.y);
+            int x = start.x;
+            while (x<b.getWidth() && b.getRGB(x,start.y) == rectColor){;
+                visited[x][start.y] = true;
+                x++;
+            }
+            x--; //back up one
+            int y = start.y;
+            while (y<b.getHeight() && b.getRGB(x,y) == rectColor){
+                for (int ix = start.x; ix<x; ix++) visited[ix][y] = true;
+               // log.dbg("Extending in y");
+                y++;
+            }
+            y--; //back up one
+            if (rectColor == b.getRGB(0,0) && x-start.x > 0 && y-start.y > 0) res.add(new Collider(start.x, start.y, x-start.x,y-start.y));
+            start = nextToVisit(visited);
+        }
+        for (Collider c : res){
+            log.inf(c.toString());
+        }
+        log.inf(String.format("Built %d colision rects",res.size()));
+        return res;
+    }
+
     void buildHeightmap(){
         log.inf("Building heightmap");
         for (int i = 0; i<_gfx.bufferX; i++){
@@ -60,6 +106,19 @@ public class GameMgr implements KeyListener {
         _gfx.submitHeightmap(fieldHeightmap);
     }
 
+    class wtfIsHappening extends JPanel{
+        @Override
+        protected void paintComponent(Graphics g) {
+            super.paintComponent(g);
+            g.clearRect(0,0,getWidth(),getHeight());
+            if (_gfx != null) g.drawImage(_gfx.getSprite("maps","playplace.col"),0,0,null);
+            g.setColor(Color.BLUE);
+            for (Collider c : _fieldColliders)
+                g.drawRect((int)c.position.x*2,(int)c.position.y*2,(int)c.size.x*2,(int)c.size.y*2);
+            repaint();
+        }
+    }
+
     public GameMgr(){
         if (ENABLE_DBG) {
             dbgInspector = new JFrame("Dbg");
@@ -68,24 +127,30 @@ public class GameMgr implements KeyListener {
             dbgPane = new JTextArea();
             dbgInspector.add(dbgPane);
         }
+        dbgInspector = new JFrame("Dbg");
+        dbgInspector.setVisible(true);
+        dbgInspector.setSize(600, 300);
+        dbgInspector.add(new wtfIsHappening());
+
 
         _geese = new ArrayList<>();
         _bodies = new ArrayList<>();
         _effects = new ArrayList<>();
         _fieldColliders = new ArrayList<>();
-        initField();
+
 
         log.inf("Starting GFX thread");
         _gfx = new GfxMgr(this);
         _gfx.addInputHandler(this);
 
         fieldHeightmap = new int[_gfx.bufferX];
-        buildHeightmap();
 
         _gfxThread = new Thread(_gfx);
         _gfxThread.start();
         _net = new NetMgr(true);
         _snd = new SndMgr();
+        initField();
+        buildHeightmap();
         //_snd.setBGM("bgm.fight");
 
         log.inf("Starting Compute thread");
@@ -194,14 +259,16 @@ public class GameMgr implements KeyListener {
         return new Collider(x, y, width, height);
     }
     void initField(){
-        Collider platform = createPlatform(0, 160, 500, 40);
-        Collider wLeft = createPlatform(0, 0, 10, 160);
-        Collider wRight = createPlatform(310, 0, 10, 160);
-        //Collider testPlatform = createPlatform(40,120,120,20);
-        //this._fieldColliders.add(testPlatform);
-        this._fieldColliders.add(platform);
-        this._fieldColliders.add(wLeft);
-        this._fieldColliders.add(wRight);
+        this._fieldColliders = getRectsFromImg(_gfx.getSprite("maps","playplace.col"));
+
+//        Collider platform = createPlatform(0, 160, 500, 40);
+//        Collider wLeft = createPlatform(0, 0, 10, 160);
+//        Collider wRight = createPlatform(310, 0, 10, 160);
+//        //Collider testPlatform = createPlatform(40,120,120,20);
+//        //this._fieldColliders.add(testPlatform);
+//        this._fieldColliders.add(platform);
+//        this._fieldColliders.add(wLeft);
+//        this._fieldColliders.add(wRight);
     }
 
     synchronized void updateRender(){
@@ -285,6 +352,7 @@ public class GameMgr implements KeyListener {
             _geese.get(1)._facing = FacingDirection.Right;
             p2().velocity = new Vector2(6, p2().velocity.y);
         }
+
 
 
         updateRender();

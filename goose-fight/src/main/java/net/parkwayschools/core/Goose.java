@@ -27,6 +27,7 @@ public class Goose {
     public Attack[] attacks;
     public PhysicsBody body;
     StateManager manager;
+    public int health;
 
     enum Animation {
         IDLE,
@@ -63,6 +64,7 @@ public class Goose {
             _interuptFrames--;
         }
         Vector2 crouchOffset = new Vector2(body.position.x,body.position.y-body.collider.size.y);
+        if (!body.crouching) crouchOffset = body.position;
         return switch (desired) {
             case Animation.AIRIDLE -> new RenderObj(body.position,"jump","Air",false,0,true,_facing == FacingDirection.Left);
             case Animation.JUMP -> new RenderObj(
