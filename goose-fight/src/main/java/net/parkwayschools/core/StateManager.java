@@ -6,9 +6,8 @@ import java.util.Queue;
 public class StateManager implements Runnable, KeyListener {
     HashMap<Integer, Attack> allAttacks = new HashMap<>();
     Queue<State> activeStates = new LinkedList<>();
-    boolean running = true;
     Goose focus;
-    State currentState;
+    Thread currentState;
 
     public StateManager(Goose g) {
         focus = g;
@@ -34,23 +33,20 @@ public class StateManager implements Runnable, KeyListener {
         }
     }
 
-    public boolean isRunning() { return running; }
-
     /* Running! Put stuff in the line, then run them */
     public void run() {
         System.out.print("");
         if (!activeStates.isEmpty()) {
-            currentState = activeStates.peek();
-            currentState.run();
+            currentState = new Thread(activeStates.peek());
+            currentState.run(); 
             activeStates.poll();
        }
     }
 
     public void stop() {
-        currentState.stop();
-        running = false;
+        currentState.interrupt();
         activeStates.clear();
-        System.out.println("StateManager stopped");
+        System.out.println("State Manager stopped");
     }
 
     public void interruptState(State s) {
