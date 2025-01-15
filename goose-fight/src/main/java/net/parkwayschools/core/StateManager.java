@@ -35,22 +35,23 @@ public class StateManager implements Runnable, KeyListener {
 
     /* Running! Put stuff in the line, then run them */
     public void run() {
-        System.out.print("");
-        if (!activeStates.isEmpty()) {
-            currentState = new Thread(activeStates.peek());
-            currentState.run(); 
-            activeStates.poll();
-       }
+        try {
+            System.out.print("");
+            if (!activeStates.isEmpty()) {
+                currentState = new Thread(activeStates.peek());
+                currentState.run(); 
+                activeStates.poll();
+           }
+        }
+        catch (InterruptedException e) {
+            currentState.interrupt();
+            activeStates.clear();
+            System.out.println("State Manager stopped");
+        }
     }
 
-    public void stop() {
-        currentState.interrupt();
-        activeStates.clear();
-        System.out.println("State Manager stopped");
-    }
 
-    public void interruptState(State s) {
-        stop();
+    public void addState(State s) {
         activeStates.add(s);
         focus.runManager();
     }
