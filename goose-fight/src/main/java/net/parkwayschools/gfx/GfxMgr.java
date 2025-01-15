@@ -20,7 +20,7 @@ import java.util.Scanner;
 public class GfxMgr implements Runnable{
     public final int bufferX = 320, bufferY = 160;
     public final int groundLine = 128;
-    public final int shadowLine = 140;
+    public final int shadowLine = 160;
     final int animFrameRate = 12;
     final int systemFrameRate = 30;
     final int aFramesPerSFrame = (int)(systemFrameRate/animFrameRate);
@@ -29,10 +29,11 @@ public class GfxMgr implements Runnable{
     JFrame _frame;
     RenderPanel _rp;
     ArrayList<RenderObj> _currentRQ;
-    HashMap<String,Spritesheet> _sheets;
+    public HashMap<String,Spritesheet> _sheets;
     BufferedImage _framebuffer;
     HudRenderer _hudR;
     int[] _heights;
+    public ArrayList<HMZone> _zones;
     int[] _dbgHx;
 
     public GfxMgr(GameMgr m){
@@ -42,6 +43,7 @@ public class GfxMgr implements Runnable{
         _currentRQ = new ArrayList<>();
         _currentRQ.add(new RenderObj(Vector2.zero,"maps","playplace",false,0));
         _currentRQ.add(new RenderObj(new Vector2(20,20),"Goose-idle","rIdle",true,4));
+        _currentRQ.add(new RenderObj(new Vector2(140,20),"$Text","Loading Game...",false,0));
         _framebuffer =  new BufferedImage(bufferX,bufferY,BufferedImage.TYPE_INT_ARGB);
         _hudR = new HudRenderer(m);
         initSpritesheets();
@@ -107,6 +109,33 @@ public class GfxMgr implements Runnable{
             Graphics2D g = (Graphics2D)_framebuffer.getGraphics();
             g.clearRect(0,0,bufferX,bufferY);
             for (RenderObj o : _currentRQ){
+                if (o.sheetID().equals("$Global")){
+                    if (o.spriteID().equals("shadow2")){
+                        for (HMZone z : _zones){
+                            g.setColor(Color.RED);
+                            GradientPaint shadowGrad = new GradientPaint(0,0,new Color(100,0,100,10),0,100,new Color(100,0,100,20));
+                            if (o.renderShadow()) g.fillRect(z.sx(),z.height(),z.ex()-z.sx(),2);
+                            g.setPaint(shadowGrad);
+                            if (z.height() < 140)
+                                g.fillPolygon(
+                                        new int[]{z.sx(),z.ex(), (int) (z.ex()+o.pos().x), (int) (z.sx()-o.pos().y)},
+                                        new int[]{z.height(),z.height(),170,170},
+                                        4
+                                );
+                        }
+                        continue;
+                    }
+                    if (o.spriteID().equals("shadow")){
+                        GradientPaint shadowGrad = new GradientPaint(0,0,new Color(0,0,0,10),0,100,new Color(0,0,0,20));
+                        if (true) {
+                            g.setPaint(shadowGrad);
+                            for (int i = 13; i < bufferX-13; i++) {
+                                if (_heights[i] < groundLine) g.fillRect(i, _heights[i], 1, shadowLine - _heights[i]);
+                            }
+                        }
+                        continue;
+                    }
+                }
                 if (o.sheetID().equals("$Text")){
                     if (o.renderShadow() || o.flipHorizontal()) log.err("Effects not supported for text!");
                     g.drawString(o.spriteID(),(int)o.pos().x,(int)o.pos().y);
@@ -157,6 +186,7 @@ public class GfxMgr implements Runnable{
                     blurOp.filter(shPre, sh);
                     //squish
                     AffineTransform at = new AffineTransform();
+                    if (!o.shadowRespectsGroundplane()) distanceFromFloor = 10;
                     double atSX = (1/shadowSmearFactor)*(0.5 - ((distanceFromFloor/10)*0.05));
                     double atSY = shadowSmearFactor*(0.5 - ((distanceFromFloor/10)*0.02));
                     at.scale( atSX,atSY);
@@ -170,26 +200,25 @@ public class GfxMgr implements Runnable{
                     widthDistance*=(o.flipHorizontal() ? -1 : 1);
 
                     int renderX = widthDistance+(int)o.pos().x-4+( o.flipHorizontal() ? sp.meta.xOff() : 0);
+                    if (o.shadowRespectsGroundplane()) {
+                        for (int x = renderX; x < renderX + fina.getWidth(); x++) {
+                            x = Math.max(x, 0);
+                            x = Math.min(x, 320);
 
-                    for (int x = renderX; x<renderX+fina.getWidth(); x++){
-                        x = Math.max(x,0);
-                        x = Math.min(x,320);
-
-                        if (_heights[x] > o.pos().y) g.drawImage(fina.getSubimage(  o.flipHorizontal() ? fina.getWidth() - (x-renderX)-1 : x-renderX,0,1,fina.getHeight()),x,_heights[x]-9,null);
+                            if (_heights[x] > o.pos().y)
+                                g.drawImage(fina.getSubimage(o.flipHorizontal() ? fina.getWidth() - (x - renderX) - 1 : x - renderX, 0, 1, fina.getHeight()), x, _heights[x] - 9, null);
+                        }
+                    }
+                    else {
+                        g.drawImage(fina,0,0,null);
                     }
                 }
                 g.drawImage(spr, (int) o.pos().x+(o.flipHorizontal() ? spr.getWidth() : 0)+ ( o.flipHorizontal() ? sp.meta.xOff() : 0), (int) o.pos().y, spr.getWidth()*(o.flipHorizontal() ? -1 : 1),spr.getHeight(), null);
             }
-            //== Global shadow
-            if (false) {
-                g.setColor(new Color(0, 0, 0, 20));
-                for (int i = 0; i < bufferX; i++) {
-                    g.drawRect(i, shadowLine, 1, shadowLine - _heights[i]);
-                }
-            }
+
             g.setColor(Color.RED);
 
-           // g.drawPolyline(_dbgHx,_heights,bufferX);
+          //  g.drawPolyline(_dbgHx,_heights,bufferX);
             //== End Debug
 
             //=== Handoffpul

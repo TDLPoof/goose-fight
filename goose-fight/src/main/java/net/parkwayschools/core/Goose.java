@@ -53,9 +53,12 @@ public class Goose {
             case JUMP -> 4;
             case DOUBLE_JUMP -> 5;
             case CROUCH -> 6;
+            case ATK_JAB -> 11;
             default -> 0;
         };
     }
+
+
 
     RenderObj getRO(){
         Animation desired = currentLoopingAnim;
@@ -102,6 +105,7 @@ public class Goose {
 
     public Goose(GameMgr m){
         this.attacks = new Attack[]{new Attack(1000, KeyEvent.VK_K), new Attack(2000, KeyEvent.VK_1)};
+        health = 100;
         this._playerType = GooseType.BasicGoose;
         this._facing = FacingDirection.Right;
         this.body = new PhysicsBody(0.,0.,32.,32.,1.,new Vector2(0.15, 0.1),0.04,"");
