@@ -12,7 +12,7 @@ public class TestMain {
         window.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         window.setVisible(true);
         
-        Goose g1 = new Goose(new Attack[]{new Attack(1000, KeyEvent.VK_K), new Attack(2000, KeyEvent.VK_1)});
+        Goose g1 = new Goose(); // edit this line w/ game manager stuff
         window.addKeyListener(g1.getManager());
         g1.runManager();         
     }
