@@ -26,6 +26,7 @@ public class Goose {
     FacingDirection _facing;
     public Attack[] attacks;
     public PhysicsBody body;
+    StateManager manager;
     public int health;
 
     enum Animation {
@@ -103,11 +104,27 @@ public class Goose {
     }
 
     public Goose(GameMgr m){
+        this.attacks = new Attack[]{new Attack(1000, KeyEvent.VK_K), new Attack(2000, KeyEvent.VK_1)};
         health = 100;
         this._playerType = GooseType.BasicGoose;
         this._facing = FacingDirection.Right;
         this.body = new PhysicsBody(0.,0.,32.,32.,1.,new Vector2(0.15, 0.1),0.04,"");
+        this.manager = new StateManager(this);
         //AT THE END OF THE CONSTRUCTOR. DON'T LEAK THIS BEFORE YOU HAVE TO (we leak because easy lol)
         m.registerGoose(this);
+    }
+
+    public Attack[] getAttacks() { return attacks; }
+
+    public StateManager getManager() { return manager; }
+
+    public void runManager() { 
+        while (manager.isRunning()) {
+            manager.run();
+        } 
+    }
+    public void interruptState(State s) { 
+        manager.interrupt();
+        manager.addState(s);
     }
 }
