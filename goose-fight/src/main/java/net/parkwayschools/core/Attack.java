@@ -12,12 +12,10 @@ public class Attack extends State {
         return this.activeKey; }
 
     @Override public void run() {
-        while (running) {
+        try {
             System.out.println("Triggered by Key " + activeKey + " for " + framesActive + " ms");
-            try { Thread.sleep(this.getFramesActive()); }
-            catch(InterruptedException e) {}
-            running = false;
+            Thread.sleep(this.getFramesActive()); 
         }
-        
+        catch(InterruptedException e) {}        
     }
 }
