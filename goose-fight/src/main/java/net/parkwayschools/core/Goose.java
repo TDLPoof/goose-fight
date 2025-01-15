@@ -117,8 +117,8 @@ public class Goose {
             manager.run();
         } 
     }
-
-    public void stopManager() { manager.stop(); }
-
-    public void interruptState(State s) { manager.interruptState(s); }
+    public void interruptState(State s) { 
+        manager.interrupt();
+        manager.addState(s);
+    }
 }
