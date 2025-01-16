@@ -18,7 +18,7 @@ import java.util.Scanner;
 * Implements the graphics and render thread
 * */
 public class GfxMgr implements Runnable{
-    public final int bufferX = 320, bufferY = 160;
+    public final int bufferX = 320, bufferY = 180;
     public final int groundLine = 128;
     public final int shadowLine = 160;
     final int animFrameRate = 12;
@@ -41,9 +41,9 @@ public class GfxMgr implements Runnable{
 
         _sheets = new HashMap<>();
         _currentRQ = new ArrayList<>();
-        _currentRQ.add(new RenderObj(Vector2.zero,"maps","playplace",false,0));
-        _currentRQ.add(new RenderObj(new Vector2(20,20),"Goose-idle","rIdle",true,4));
-        _currentRQ.add(new RenderObj(new Vector2(140,20),"$Text","Loading Game...",false,0));
+        _currentRQ.add(new RenderObj(new Vector2(0,0),"title","goosefight",false,0));
+        // rq.add(new RenderObj(new Vector2(110,155),"$Text","Loading game...",false,0));
+        _currentRQ.add(new RenderObj(new Vector2(80,140),"$Text","Loading Game...",false,0));
         _framebuffer =  new BufferedImage(bufferX,bufferY,BufferedImage.TYPE_INT_ARGB);
         _hudR = new HudRenderer(m);
         initSpritesheets();
@@ -92,7 +92,7 @@ public class GfxMgr implements Runnable{
         return res;
     }
 
-
+    int[] bobOffsets = new int[]{-6,-6,-6,-5,-5,-5,-4,-4,-4,-3,-3,-3,-2,-2,-2,-1,-1,-1,0,0,0,-1,-1,-1,-2,-2,-2,-3,-3,-3,-4,-4,-4,-5,-5,-5};
 
     @Override
     public void run() {
@@ -167,6 +167,15 @@ public class GfxMgr implements Runnable{
                         if (spr == null) spr = _sheets.get("err").spr("err");
                     }
                 }
+                switch (o.ma()){
+                    case FLASH_WHITE -> {
+                        ImageFilter filter = new GrayFilter(true, 100-(int)((frameCount/aFramesPerSFrame)%10));
+                        ImageProducer producer = new FilteredImageSource(spr.getSource(), filter);
+                        BufferedImage br = toBufferedImage(Toolkit.getDefaultToolkit().createImage(producer));
+                        spr = br;
+                    }
+                    case NONE -> {}
+                }
 
 
                 if (o.renderShadow()){
@@ -215,7 +224,7 @@ public class GfxMgr implements Runnable{
                         g.drawImage(fina,0,0,null);
                     }
                 }
-                g.drawImage(spr, (int) o.pos().x+(o.flipHorizontal() ? spr.getWidth() : 0)+ ( o.flipHorizontal() ? sp.meta.xOff() : 0), (int) o.pos().y, spr.getWidth()*(o.flipHorizontal() ? -1 : 1),spr.getHeight(), null);
+                g.drawImage(spr, (int) o.pos().x+(o.flipHorizontal() ? spr.getWidth() : 0)+ ( o.flipHorizontal() ? sp.meta.xOff() : 0)+(o.ma() == MagicAnim.X_BOB ? ((frameCount/aFramesPerSFrame)%12)-6 : 0), (int) o.pos().y+(o.ma() == MagicAnim.Y_BOB ? bobOffsets[(frameCount/aFramesPerSFrame)% bobOffsets.length] : 0), spr.getWidth()*(o.flipHorizontal() ? -1 : 1),spr.getHeight(), null);
             }
 
             g.setColor(Color.RED);

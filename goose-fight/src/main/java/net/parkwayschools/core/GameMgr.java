@@ -1,9 +1,6 @@
 package net.parkwayschools.core;
 
-import net.parkwayschools.gfx.Effect;
-import net.parkwayschools.gfx.GfxMgr;
-import net.parkwayschools.gfx.HMZone;
-import net.parkwayschools.gfx.RenderObj;
+import net.parkwayschools.gfx.*;
 import net.parkwayschools.net.NetMgr;
 import net.parkwayschools.phys.Collider;
 import net.parkwayschools.phys.PhysicsBody;
@@ -39,7 +36,7 @@ public class GameMgr implements KeyListener {
             return this != TITLE_SCREEN;
         }
     }
-
+    GameState _state;
     public static ArrayList<Goose> geese;
     ArrayList<Collider> _fieldColliders;
     ArrayList<PhysicsBody> _bodies;
@@ -215,6 +212,7 @@ public class GameMgr implements KeyListener {
     JCheckBox[] renderPasses = new JCheckBox[]{dbgR_BG, dbgR_FX, dbgR_HUD, dbgR_Player, dbgR_GShd};
 
     public GameMgr() {
+        /*if (!ENABLE_DBG)*/ _state = GameState.TITLE_SCREEN;
         if (ENABLE_DBG) {
             dbgInspector = new JFrame("Render Passes");
             dbgInspector.setVisible(true);
@@ -328,6 +326,10 @@ public class GameMgr implements KeyListener {
 
     @Override
     public void keyPressed(KeyEvent e) {
+        if (_state.equals(GameState.TITLE_SCREEN)){
+            _state = GameState.GAMEPLAY;
+            return;
+        }
         if (e.getKeyCode() == KeyEvent.VK_OPEN_BRACKET) _snd.setBGM("bgm.lobby");
         if (e.getKeyCode() == KeyEvent.VK_P) geese.get(0).addInterrupt(Animation.ATK_JAB);
         if (e.getKeyCode() == KeyEvent.VK_UP && p1().jumps > 0) {
@@ -398,7 +400,39 @@ public class GameMgr implements KeyListener {
 //        this._fieldColliders.add(wRight);
     }
 
+    void titleScreenRender(){
+        ArrayList<RenderObj> rq = new ArrayList<>();
+
+        int x = 5,y=0;
+        String[][] n = _gfx._sheets.get("Goose").meta.nameMap();
+        for (String[] s : n){
+            for (String sn : s){
+                rq.add(new RenderObj(new Vector2(x,y),"Goose",sn,false,0));
+                x += 40;
+                if (x>=320-32){
+                    x = 5;
+                    y += 30;
+                }
+            }
+        }
+
+
+
+        rq.add(new RenderObj(new Vector2(0,0),"title","goosefight",false,0,false,false,false, MagicAnim.Y_BOB));
+
+       // rq.add(new RenderObj(new Vector2(110,155),"$Text","Loading game...",false,0));
+        rq.add(new RenderObj(new Vector2(295,10),"$Text","beta",false,0));
+
+        rq.add(new RenderObj(new Vector2(80,130),"$Text","~ Press Any Key To Start ~",false,0));
+
+        _gfx.submitRenderQueue(rq);
+    }
+
     synchronized void updateRender() {
+        if (_state == GameState.TITLE_SCREEN) {
+            titleScreenRender();
+            return;
+        }
         //   log.inf("UPDR");
         ArrayList<RenderObj> rq = new ArrayList<>();
         if (!ENABLE_DBG || dbgR_BG.isSelected()) rq.add(new RenderObj(Vector2.zero, "maps", "playplace", false, 0));

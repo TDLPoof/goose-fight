@@ -44,7 +44,7 @@ public class StateManager implements Runnable, KeyListener {
                 if (!s.hasFiredAttack){
                     focus.addInterrupt(s.attackAnim);
                 }
-                System.out.println("Remaining frames: "+s.framesActive);
+           //     System.out.println("Remaining frames: "+s.framesActive);
                 s.run();
                 s.framesActive-=1;
                 if (s.framesActive < 0) activeStates.remove();

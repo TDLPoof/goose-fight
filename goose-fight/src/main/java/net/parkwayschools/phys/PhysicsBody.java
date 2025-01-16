@@ -51,13 +51,13 @@ public class PhysicsBody
                     grounded = true;
                     jumps = 2;
                     walljumps = 2;
-                    if (!collider.name.equals("tBox")) System.out.println("Vertical Intersection Detected [" + collider.name + " | " + c.name + "]");
+                  //  if (!collider.name.equals("tBox")) System.out.println("Vertical Intersection Detected [" + collider.name + " | " + c.name + "]");
                 }
                 if (collider.horiIntersects(c)) {
                     position.x -= velocity.x;
                     velocity.x *= -restitution;
                     collider.position = new Vector2(position.x + velocity.x, position.y);
-                    if (!collider.name.equals("tBox")) System.out.println("Horizontal Intersection Detected [" + collider.name + " | " + c.name + "]");
+                    //if (!collider.name.equals("tBox")) System.out.println("Horizontal Intersection Detected [" + collider.name + " | " + c.name + "]");
                     walled = true;
                 }
             }

@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.Stack;
 
 import net.parkwayschools.core.atk.Jab;
+import net.parkwayschools.gfx.MagicAnim;
 import net.parkwayschools.gfx.RenderObj;
 import net.parkwayschools.phys.PhysicsBody;
 import net.parkwayschools.phys.Vector2;
@@ -34,6 +35,7 @@ public class Goose {
     public Animation currentLoopingAnim;
     Animation _interruptAnim;
     int _interuptFrames;
+    int hurtingFrames = 0;
 
     public void addInterrupt(Animation a){
         if (_interuptFrames > 0) return;
@@ -47,7 +49,10 @@ public class Goose {
         };
     }
 
-
+    public void hurt(int dmg){
+        health -= dmg;
+        hurtingFrames = 3;
+    }
 
     RenderObj getRO(){
         this.manager.run();
@@ -56,38 +61,39 @@ public class Goose {
             desired = _interruptAnim;
             _interuptFrames--;
         }
+        if (hurtingFrames > 0) hurtingFrames--;
         Vector2 crouchOffset = new Vector2(body.position.x,body.position.y-body.collider.size.y);
         if (!body.crouching) crouchOffset = body.position;
         return switch (desired) {
-            case Animation.AIRIDLE -> new RenderObj(body.position,"jump","Air",false,0,true,_facing == FacingDirection.Left);
+            case Animation.AIRIDLE -> new RenderObj(body.position,"jump","Air",false,0,true,_facing == FacingDirection.Left,true, hurtingFrames > 0 ? MagicAnim.FLASH_WHITE : MagicAnim.NONE);
             case Animation.JUMP -> new RenderObj(
                     body.position,
-                    "jump", "J", true, 4, true, _facing == FacingDirection.Left);
+                    "jump", "J", true, 4, true, _facing == FacingDirection.Left,true, hurtingFrames > 0 ? MagicAnim.FLASH_WHITE : MagicAnim.NONE);
             case Animation.DOUBLE_JUMP -> new RenderObj(
                     body.position,
-                    "jump", "DJ", true, 5, true, _facing == FacingDirection.Left);
+                    "jump", "DJ", true, 5, true, _facing == FacingDirection.Left,true, hurtingFrames > 0 ? MagicAnim.FLASH_WHITE : MagicAnim.NONE);
             case Animation.IDLE -> new RenderObj(
                     body.position,
-                    "Goose", "Idle", true, 25, true, _facing == FacingDirection.Left);
+                    "Goose", "Idle", true, 25, true, _facing == FacingDirection.Left,true, hurtingFrames > 0 ? MagicAnim.FLASH_WHITE : MagicAnim.NONE);
             case Animation.RUN -> new RenderObj(
                     body.position,
-                    "Goose", "Running", true, 8, true, _facing == FacingDirection.Left);
+                    "Goose", "Running", true, 8, true, _facing == FacingDirection.Left,true, hurtingFrames > 0 ? MagicAnim.FLASH_WHITE : MagicAnim.NONE);
             case Animation.BACKRUN -> new RenderObj(
                     body.position,
-                    "Goose", "Walkback", true, 8, true, _facing == FacingDirection.Left);
+                    "Goose", "Walkback", true, 8, true, _facing == FacingDirection.Left,true, hurtingFrames > 0 ? MagicAnim.FLASH_WHITE : MagicAnim.NONE);
             case Animation.CROUCH -> new RenderObj(
                     crouchOffset,
-                    "Goose", "Crouch", true, 6, true, _facing == FacingDirection.Left);
+                    "Goose", "Crouch", true, 6, true, _facing == FacingDirection.Left,true, hurtingFrames > 0 ? MagicAnim.FLASH_WHITE : MagicAnim.NONE);
             case Animation.CROUCHIDLE -> new RenderObj(
                     crouchOffset,
-                    "Goose", "Crouch6", false, 0, true, _facing == FacingDirection.Left);
+                    "Goose", "Crouch6", false, 0, true, _facing == FacingDirection.Left,true, hurtingFrames > 0 ? MagicAnim.FLASH_WHITE : MagicAnim.NONE);
             case Animation.UNCROUCH -> new RenderObj(
                     crouchOffset,
-                    "Goose", "Uncrouch", true, 6, true, _facing == FacingDirection.Left);
+                    "Goose", "Uncrouch", true, 6, true, _facing == FacingDirection.Left,true, hurtingFrames > 0 ? MagicAnim.FLASH_WHITE : MagicAnim.NONE);
 
             case Animation.ATK_JAB -> new RenderObj(
                     body.position,
-                    "Jab", "Jab", true, 11, true, _facing == FacingDirection.Left);
+                    "Jab", "Jab", true, 11, true, _facing == FacingDirection.Left,true, hurtingFrames > 0 ? MagicAnim.FLASH_WHITE : MagicAnim.NONE);
 
             default -> new RenderObj(body.position,"err","err",false,0);
         };
